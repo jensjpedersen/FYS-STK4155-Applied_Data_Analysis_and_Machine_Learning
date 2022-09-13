@@ -4,10 +4,14 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import sklearn.linear_model as skl
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import  train_test_split
+
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, Normalizer
 
 @dataclass
@@ -15,20 +19,60 @@ class FrankeData:
     """ Class for generating data from franke funciton
 
     Args:
-        n (int): Number of datapints in dataset
-        N (str): Number of features
+        N (int): Number of datapoints
+        n (str): Polynomial degree
         x_range (list[int]): Range of x values, [x_min, x_max]
         y_range (list[int]): Range of y values, [y_min, y_max] 
     """
     n: int
     N: int
+
     x_range: list[int] = field(default_factory = lambda: [0, 1])
     y_range: list[int] = field(default_factory = lambda: [0, 1])
 
-    def __xy_vectors(self): 
-        print('hei')
+    x: np.ndarray = field(init=False) 
+    y: np.ndarray = field(init=False)
+    z: np.ndarray = field(init=False)
+    X: np.ndarray = field(init=False)
 
-    def __franke_funciton(self, x,y):
+    def __post_init__(self):
+        x = np.linspace(self.x_range[0], self.x_range[1], self.N)
+        y = np.linspace(self.y_range[0], self.y_range[1], self.N)
+        self.x, self.y = np.meshgrid(x,y)
+        self.z = self.__franke_funciton(self.x, self.y)
+        self.X = self.__design_matrix(self.n)
+
+    def print_design_matrix(self): 
+        n = self.n 
+        print(f"X[:,0] = 1")
+        for i in range(1,n+1):
+            q = int((i)*(i+1)/2)
+            for k in range(i+1):
+                # X[:,q+k] = (x**(i-k))*(y**k)
+                print(f"X[:,{q+k}] = x^{i-k} y^{k}")
+
+    def plot(self):
+
+        
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        surf = ax.plot_surface(self.x, self.y, self.z), #cmap=cm.coolwarm,
+        # Plot the surface.
+                # linewidth=0, antialiased=False)
+        # Customize the z axis.
+        # ax.set_zlim(-0.10, 1.40)
+        # ax.zaxis.set_major_locator(LinearLocator(10))
+        # ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+        plt.show()
+        sys.exit()
+        # Add a color bar which maps values to colors.
+
+
+
+
+
+    def __franke_funciton(self, x: np.ndarray, y: np.ndarray):
         term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
         term2 = 0.75*np.exp(-((9*x+1)**2)/49.0 - 0.1*(9*y+1))
         term3 = 0.5*np.exp(-(9*x-7)**2/4.0 - 0.25*((9*y-3)**2))
@@ -36,31 +80,36 @@ class FrankeData:
         return term1 + term2 + term3 + term4
 
 
-    def __design_matrix(self, n: int, N: int):
+    def __design_matrix(self, n: int):
+        x = self.x
+        y = self.y
         """
-        n (int) - Number of data point
-        N (int) - Polynomial degree
+        n (int) - Polynomial degree
         """ 
         if len(x.shape) > 1:
-            x = np.ravel(x)
-            y = np.ravel(y)
+            x = np.ravel(self.x)
+            y = np.ravel(self.y)
 
         N = len(x)
-        l = int((n+1)*(n+2)/2)		# Number of elements in beta
+        l = ((n+1)*(n+2)/2)		# Number of elements in beta
+        if (l % 2) != 0:  
+            raise ValueError('Odd number devided by 2')
+        l = int(l)
+
+
         X = np.ones((N,l))
 
         for i in range(1,n+1):
             q = int((i)*(i+1)/2)
             for k in range(i+1):
                 X[:,q+k] = (x**(i-k))*(y**k)
-
         return X
 
 
 
-
 if __name__ == '__main__':
-    f = FrankeData(n=100, N=5)
+    f = FrankeData(n=2, N=100)
+    f.plot()
 
 
     # Making meshgrid of datapoints and compute Franke's function
