@@ -21,25 +21,28 @@ class FrankeData:
     Args:
         N (int): Number of datapoints
         n (str): Polynomial degree
+        add_noise (bool):  if true adds mu(0, 1) noise to franke fucntion
         x_range (list[int]): Range of x values, [x_min, x_max]
         y_range (list[int]): Range of y values, [y_min, y_max] 
     """
     n: int
     N: int
 
+    add_noise: bool = False
+
     x_range: list[int] = field(default_factory = lambda: [0, 1])
     y_range: list[int] = field(default_factory = lambda: [0, 1])
 
-    x: np.ndarray = field(init=False) 
-    y: np.ndarray = field(init=False)
-    z: np.ndarray = field(init=False)
-    X: np.ndarray = field(init=False)
+    x: np.ndarray = field(init=False, repr=False) 
+    y: np.ndarray = field(init=False, repr=False)
+    z: np.ndarray = field(init=False, repr=False)
+    X: np.ndarray = field(init=False, repr=False)
 
     def __post_init__(self):
         x = np.linspace(self.x_range[0], self.x_range[1], self.N)
         y = np.linspace(self.y_range[0], self.y_range[1], self.N)
         self.x, self.y = np.meshgrid(x,y)
-        self.z = self.__franke_funciton(self.x, self.y)
+        self.z = self.__franke_funciton(self.x, self.y, self.add_noise)
         self.X = self.__design_matrix(self.n)
 
     def print_design_matrix(self): 
@@ -52,31 +55,23 @@ class FrankeData:
                 print(f"X[:,{q+k}] = x^{i-k} y^{k}")
 
     def plot(self):
-
-        
-
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         surf = ax.plot_surface(self.x, self.y, self.z), #cmap=cm.coolwarm,
-        # Plot the surface.
-                # linewidth=0, antialiased=False)
-        # Customize the z axis.
-        # ax.set_zlim(-0.10, 1.40)
-        # ax.zaxis.set_major_locator(LinearLocator(10))
-        # ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
         plt.show()
         sys.exit()
-        # Add a color bar which maps values to colors.
 
 
-
-
-
-    def __franke_funciton(self, x: np.ndarray, y: np.ndarray):
+    def __franke_funciton(self, x: np.ndarray, y: np.ndarray, add_noise = False):
         term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
         term2 = 0.75*np.exp(-((9*x+1)**2)/49.0 - 0.1*(9*y+1))
         term3 = 0.5*np.exp(-(9*x-7)**2/4.0 - 0.25*((9*y-3)**2))
         term4 = -0.2*np.exp(-(9*x-4)**2 - (9*y-7)**2)
+
+        if add_noise: 
+            noise = np.random.normal(0, 1, np.shape(x))
+            return term1 + term2 + term3 + term4 + noise
+
         return term1 + term2 + term3 + term4
 
 
@@ -108,8 +103,7 @@ class FrankeData:
 
 
 if __name__ == '__main__':
-    f = FrankeData(n=2, N=100)
-    f.plot()
+    f = FrankeData(n=2, N=100, add_noise = True)
 
 
     # Making meshgrid of datapoints and compute Franke's function
