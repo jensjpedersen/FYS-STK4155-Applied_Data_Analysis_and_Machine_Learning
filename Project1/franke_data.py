@@ -32,7 +32,7 @@ class FrankeData:
 
     add_noise: bool = False
     uniform_data: bool = True
-    data_dim: int = 1
+    data_dim: int = 2
     
 
     x_range: list[int] = field(default_factory = lambda: [0, 1])
@@ -49,7 +49,7 @@ class FrankeData:
         self.X = self.__design_matrix(self.n)
 
     def get_train_test_data(self, test_size: float = 0.2):
-        """ Generates and returns train-, test-data """
+        """ Generates and returns tuple: (X_train, X_test, y_train, y_test) """
         X_train, X_test, y_train, y_test = train_test_split(self.X, self.z, test_size=test_size)
         return X_train, X_test, y_train, y_test
 
@@ -63,12 +63,19 @@ class FrankeData:
                 print(f"X[:,{q+k}] = x^{i-k} y^{k}")
 
     def plot(self):
+        x = self.x 
+        y = self.y
+        z = self.z
+
+        if self.data_dim > 1:
+            z = z.reshape(self.N, self.N)
+
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         if self.data_dim == 2:
-            ax.plot_surface(self.x, self.y, self.z) 
+            ax.plot_surface(x, y, z) 
         elif self.data_dim == 1:
-            ax.plot(self.x, self.y, self.z)
+            ax.plot(x, y, z)
         plt.show()
 
 
@@ -90,6 +97,10 @@ class FrankeData:
         return x, y 
 
     def __franke_funciton(self, x: np.ndarray, y: np.ndarray, add_noise = False):
+        if self.data_dim > 1:
+            x = np.ravel(self.x)
+            y = np.ravel(self.y)
+
         term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
         term2 = 0.75*np.exp(-((9*x+1)**2)/49.0 - 0.1*(9*y+1))
         term3 = 0.5*np.exp(-(9*x-7)**2/4.0 - 0.25*((9*y-3)**2))
@@ -103,21 +114,18 @@ class FrankeData:
 
 
     def __design_matrix(self, n: int):
+        """ n (int) - Polynomial degree """ 
         x = self.x
         y = self.y
-        """
-        n (int) - Polynomial degree
-        """ 
         if len(x.shape) > 1:
             x = np.ravel(self.x)
             y = np.ravel(self.y)
 
         N = len(x)
-        l = ((n+1)*(n+2)/2)		# Number of elements in beta
-        if (l % 2) != 0:  
-            raise ValueError('Odd number devided by 2')
-        l = int(l)
-
+        l = round(((n+1)*(n+2)/2))		# Number of elements in beta
+        # if (l % 2) != 0:  
+        #     raise ValueError('Odd number devided by 2')
+        # l = int(l)
 
         X = np.ones((N,l))
 
