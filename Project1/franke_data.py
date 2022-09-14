@@ -48,6 +48,11 @@ class FrankeData:
         self.z = self.__franke_funciton(self.x, self.y, self.add_noise)
         self.X = self.__design_matrix(self.n)
 
+    def get_train_test_data(self, test_size: float = 0.2):
+        """ Generates and returns train-, test-data """
+        X_train, X_test, y_train, y_test = train_test_split(self.X, self.z, test_size=test_size)
+        return X_train, X_test, y_train, y_test
+
     def print_design_matrix(self): 
         n = self.n 
         print(f"X[:,0] = 1")
