@@ -23,6 +23,7 @@ class FrankeData:
         n (str): Polynomial degree
         add_noise (bool):  if true adds mu(0, 1) noise to franke fucntion
         uniform_data (bool): if true, creates uniform data in x and y. 
+        data_dim (int): Number of dimensions on dataset. Values: 1 or 2 (meshgrid). 
         x_range (list[int]): Range of x values, [x_min, x_max]
         y_range (list[int]): Range of y values, [y_min, y_max] 
     """
@@ -31,6 +32,8 @@ class FrankeData:
 
     add_noise: bool = False
     uniform_data: bool = True
+    data_dim: int = 1
+    
 
     x_range: list[int] = field(default_factory = lambda: [0, 1])
     y_range: list[int] = field(default_factory = lambda: [0, 1])
@@ -41,8 +44,7 @@ class FrankeData:
     X: np.ndarray = field(init=False, repr=False)
 
     def __post_init__(self):
-        x, y = self.__generate_xy_data(self.uniform_data)
-        self.x, self.y = np.meshgrid(x,y)
+        self.x, self.y = self.__generate_xy_data(self.uniform_data, self.data_dim)
         self.z = self.__franke_funciton(self.x, self.y, self.add_noise)
         self.X = self.__design_matrix(self.n)
 
@@ -58,18 +60,27 @@ class FrankeData:
     def plot(self):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        surf = ax.plot_surface(self.x, self.y, self.z), #cmap=cm.coolwarm,
+        if self.data_dim == 2:
+            ax.plot_surface(self.x, self.y, self.z) 
+        elif self.data_dim == 1:
+            ax.plot(self.x, self.y, self.z)
         plt.show()
-        sys.exit()
 
 
-    def __generate_xy_data(self, uniform: bool):
+    def __generate_xy_data(self, uniform: bool, dim: int):
         if uniform: 
             x = np.sort(np.random.uniform(self.x_range[0], self.x_range[1], self.N))
             y = np.sort(np.random.uniform(self.x_range[0], self.x_range[1], self.N))
         else:
             x = np.linspace(self.x_range[0], self.x_range[1], self.N)
             y = np.linspace(self.y_range[0], self.y_range[1], self.N)
+
+        if dim == 1:
+            pass
+        elif dim == 2:
+            x, y = np.meshgrid(x,y)
+        else:
+            raise ValueError('data_dim is either 1 or 2')
 
         return x, y 
 
@@ -115,6 +126,7 @@ class FrankeData:
 
 if __name__ == '__main__':
     f = FrankeData(n=2, N=100, add_noise = False)
+    f.plot()
 
 
     # Making meshgrid of datapoints and compute Franke's function
