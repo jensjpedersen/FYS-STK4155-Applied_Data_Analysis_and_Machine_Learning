@@ -22,6 +22,7 @@ class FrankeData:
         N (int): Number of datapoints
         n (str): Polynomial degree
         add_noise (bool):  if true adds mu(0, 1) noise to franke fucntion
+        uniform_data (bool): if true, creates uniform data in x and y. 
         x_range (list[int]): Range of x values, [x_min, x_max]
         y_range (list[int]): Range of y values, [y_min, y_max] 
     """
@@ -29,6 +30,7 @@ class FrankeData:
     N: int
 
     add_noise: bool = False
+    uniform_data: bool = True
 
     x_range: list[int] = field(default_factory = lambda: [0, 1])
     y_range: list[int] = field(default_factory = lambda: [0, 1])
@@ -39,8 +41,7 @@ class FrankeData:
     X: np.ndarray = field(init=False, repr=False)
 
     def __post_init__(self):
-        x = np.linspace(self.x_range[0], self.x_range[1], self.N)
-        y = np.linspace(self.y_range[0], self.y_range[1], self.N)
+        x, y = self.__generate_xy_data(self.uniform_data)
         self.x, self.y = np.meshgrid(x,y)
         self.z = self.__franke_funciton(self.x, self.y, self.add_noise)
         self.X = self.__design_matrix(self.n)
@@ -61,6 +62,16 @@ class FrankeData:
         plt.show()
         sys.exit()
 
+
+    def __generate_xy_data(self, uniform: bool):
+        if uniform: 
+            x = np.sort(np.random.uniform(self.x_range[0], self.x_range[1], self.N))
+            y = np.sort(np.random.uniform(self.x_range[0], self.x_range[1], self.N))
+        else:
+            x = np.linspace(self.x_range[0], self.x_range[1], self.N)
+            y = np.linspace(self.y_range[0], self.y_range[1], self.N)
+
+        return x, y 
 
     def __franke_funciton(self, x: np.ndarray, y: np.ndarray, add_noise = False):
         term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
@@ -103,7 +114,7 @@ class FrankeData:
 
 
 if __name__ == '__main__':
-    f = FrankeData(n=2, N=100, add_noise = True)
+    f = FrankeData(n=2, N=100, add_noise = False)
 
 
     # Making meshgrid of datapoints and compute Franke's function
