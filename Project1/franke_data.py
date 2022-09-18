@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 import os
 import sys
 import numpy as np
+from numba import njit
+import time
 import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -46,7 +48,7 @@ class FrankeData:
     def __post_init__(self):
         self.x, self.y = self.__generate_xy_data(self.uniform_data, self.data_dim)
         self.z = self.__franke_funciton(self.x, self.y, self.add_noise)
-        self.X = self.__design_matrix(self.n)
+        self.X = self.__design_matrix(self.x, self.y, self.n)
 
     def get_train_test_data(self, test_size: float = 0.2):
         """ Generates and returns tuple: (X_train, X_test, y_train, y_test) """
@@ -97,9 +99,9 @@ class FrankeData:
         return x, y 
 
     def __franke_funciton(self, x: np.ndarray, y: np.ndarray, add_noise = False):
-        if self.data_dim > 1:
-            x = np.ravel(self.x)
-            y = np.ravel(self.y)
+        if len(x.shape) > 1:
+            x = np.ravel(x)
+            y = np.ravel(y)
 
         term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
         term2 = 0.75*np.exp(-((9*x+1)**2)/49.0 - 0.1*(9*y+1))
@@ -112,14 +114,11 @@ class FrankeData:
 
         return term1 + term2 + term3 + term4
 
-
-    def __design_matrix(self, n: int):
+    def __design_matrix(self, x: np.ndarray, y: np.ndarray, n: int):
         """ n (int) - Polynomial degree """ 
-        x = self.x
-        y = self.y
         if len(x.shape) > 1:
-            x = np.ravel(self.x)
-            y = np.ravel(self.y)
+            x = np.ravel(x)
+            y = np.ravel(y)
 
         N = len(x)
         l = round(((n+1)*(n+2)/2))		# Number of elements in beta
@@ -128,7 +127,13 @@ class FrankeData:
         # l = int(l)
 
         X = np.ones((N,l))
+        X = self.__jit_design_matrix_loop(x,y,n,X)
+        return X
 
+
+    @staticmethod
+    @njit
+    def __jit_design_matrix_loop(x, y, n, X):
         for i in range(1,n+1):
             q = int((i)*(i+1)/2)
             for k in range(i+1):
@@ -138,8 +143,11 @@ class FrankeData:
 
 
 if __name__ == '__main__':
-    f = FrankeData(n=2, N=100, add_noise = False)
-    f.plot()
+    tic = time.perf_counter()
+
+    f = FrankeData(n=6, N=2000, add_noise = False)
+    toc = time.perf_counter()
+    print(f'took: {toc-tic}s')
 
 
     # Making meshgrid of datapoints and compute Franke's function
