@@ -31,6 +31,14 @@ class Analysis:
 
 
     def calculate_loop(self, max_poly_deg:int, score_list = None, method_list = None, data_list = None ):
+        """ 
+        Parameters:
+            max_poly_deg (int) - Scores for all polynomial up to degree = max_poly_deg is calculated
+            score_list (list) - List with values to return. score = ['mse', 'r2', 'beta']
+            method_list (list) - takes values: 'ols_own' or 'ols_skl'
+            data_list (list) - calculate on test and/or training data. values: 'test', 'train'
+                               List indices should correspond to method_list
+        """
         poly_score = dict() # Return dict with keys correspodning to polynomial degree
         for deg in range(1, max_poly_deg+1):
             poly_score[str(deg)] = self.calculate(deg, score_list, method_list, data_list)
@@ -40,10 +48,11 @@ class Analysis:
     def calculate(self, deg, score_list = None, method_list = None, data_list = None):
         """ 
         Parameters:
-            deg (int) - polynomial degree
-            score (list) - list with values to return. score = ['mse', 'rt', 'beta']
-            method (list) - takes values: 'own' or 'skl'
-            data (list) - calculate on test on training data. values: 'test', 'train'
+            deg (int) - Polynomail degree
+            score_list (list) - List with values to return. score = ['mse', 'r2', 'beta']
+            method_list (list) - takes values: 'ols_own' or 'ols_skl'
+            data_list (list) - calculate on test and/or training data. values: 'test', 'train'
+                               List indices should correspond to method_list
         """
 
         if score_list == None:
@@ -81,7 +90,7 @@ class Analysis:
     def __get_mse(self, l, method_list, data_list): 
         X_train_deg = self.X_train[:,:l-1]       # Slice matrix -> reduce poly deg
         X_test_deg  = self.X_test[:,:l-1]
-        o = ols.OLS(X_train_deg, y_train)
+        o = ols.OLS(X_train_deg, self.y_train)
 
         # Return values 
         mse_ols = dict()
@@ -113,7 +122,7 @@ class Analysis:
     def __get_r2(self, l, method_list, data_list): 
         X_train_deg = self.X_train[:,:l-1]       # Slice matrix -> reduce poly deg
         X_test_deg  = self.X_test[:,:l-1]
-        o = ols.OLS(X_train_deg, y_train)
+        o = ols.OLS(X_train_deg, self.y_train)
 
         # Return values 
         r2_ols = dict()
@@ -145,7 +154,7 @@ class Analysis:
     def __get_beta(self, l, method_list, data_list): 
         X_train_deg = self.X_train[:,:l-1]       # Slice matrix -> reduce poly deg
         X_test_deg  = self.X_test[:,:l-1]
-        o = ols.OLS(X_train_deg, y_train)
+        o = ols.OLS(X_train_deg, self.y_train)
 
         # Return values 
         beta_ols = dict()
