@@ -32,7 +32,7 @@ class FrankeData:
     n: int
     N: int
 
-    add_noise: bool = False
+    add_noise: float = 0
     uniform_data: bool = True
     data_dim: int = 2
     
@@ -108,8 +108,8 @@ class FrankeData:
         term3 = 0.5*np.exp(-(9*x-7)**2/4.0 - 0.25*((9*y-3)**2))
         term4 = -0.2*np.exp(-(9*x-4)**2 - (9*y-7)**2)
 
-        if add_noise: 
-            noise = np.random.normal(0, 1, np.shape(x))
+        if add_noise > 0: 
+            noise = add_noise*np.random.normal(0, 1, np.shape(x))
             return term1 + term2 + term3 + term4 + noise
 
         return term1 + term2 + term3 + term4
