@@ -30,11 +30,12 @@ class Analysis:
     y_test: np.ndarray
 
 
-    def poly_deg_loop(self, func):
-        def wrapper(*args, **kwargs): 
-            for deg in range(1, max_poly_deg+1): 
-                print(deg)
-        return wrapper
+    def calculate_loop(self, max_poly_deg:int, score_list = None, method_list = None, data_list = None ):
+        poly_score = dict() # Return dict with keys correspodning to polynomial degree
+        for deg in range(1, max_poly_deg+1):
+            poly_score[str(deg)] = self.calculate(deg, score_list, method_list, data_list)
+
+        return poly_score
     
     def calculate(self, deg, score_list = None, method_list = None, data_list = None):
         """ 
@@ -66,18 +67,18 @@ class Analysis:
         score_dict = dict()
         for score in score_list: 
             if score == 'mse':
-                score_dict['mse'] = self.__get_mse_ols(l, method_list, data_list)
+                score_dict['mse'] = self.__get_mse(l, method_list, data_list)
             
             if score == 'r2': 
-                score_dict['r2'] = self.__get_r2_ols(l, method_list, data_list)
+                score_dict['r2'] = self.__get_r2(l, method_list, data_list)
 
             if score == 'beta':
-                score_dict['beta'] = self.__get_beta_ols(l, method_list, data_list)
+                score_dict['beta'] = self.__get_beta(l, method_list, data_list)
 
         return score_dict
 
 
-    def __get_mse_ols(self, l, method_list, data_list): 
+    def __get_mse(self, l, method_list, data_list): 
         X_train_deg = self.X_train[:,:l-1]       # Slice matrix -> reduce poly deg
         X_test_deg  = self.X_test[:,:l-1]
         o = ols.OLS(X_train_deg, y_train)
@@ -87,29 +88,29 @@ class Analysis:
 
         for method, data in zip(method_list, data_list): 
 
-            if method == 'own': 
+            if method == 'ols_own': 
                 o.ols()
                 if data == 'train':
                     y_model= o.predict(X_train_deg)
-                    mse_ols['own_train'] = mse(self.y_train, y_model)
+                    mse_ols['ols_own_train'] = mse(self.y_train, y_model)
 
                 elif data == 'test': 
                     y_model = o.predict(X_test_deg)
-                    mse_ols['own_test'] = mse(self.y_test, y_model)
+                    mse_ols['ols_own_test'] = mse(self.y_test, y_model)
 
-            elif method == 'skl': 
+            elif method == 'ols_skl': 
                 o.skl_ols()
                 if data == 'train':
                     y_model = o.predict(X_train_deg)
-                    mse_ols['skl_train'] = mse(self.y_train, y_model)
+                    mse_ols['ols_skl_train'] = mse(self.y_train, y_model)
 
                 elif data == 'test': 
                     y_model = o.predict(X_test_deg)
-                    mse_ols['skl_test'] = mse(self.y_test, y_model)
+                    mse_ols['ols_skl_test'] = mse(self.y_test, y_model)
 
         return mse_ols
 
-    def __get_r2_ols(self, l, method_list, data_list): 
+    def __get_r2(self, l, method_list, data_list): 
         X_train_deg = self.X_train[:,:l-1]       # Slice matrix -> reduce poly deg
         X_test_deg  = self.X_test[:,:l-1]
         o = ols.OLS(X_train_deg, y_train)
@@ -119,29 +120,29 @@ class Analysis:
 
         for method, data in zip(method_list, data_list): 
 
-            if method == 'own': 
+            if method == 'ols_own': 
                 o.ols()
                 if data == 'train':
                     y_model= o.predict(X_train_deg)
-                    r2_ols['own_train'] = r2(self.y_train, y_model)
+                    r2_ols['ols_own_train'] = r2(self.y_train, y_model)
 
                 elif data == 'test': 
                     y_model = o.predict(X_test_deg)
-                    r2_ols['own_test'] = r2(self.y_test, y_model)
+                    r2_ols['ols_own_test'] = r2(self.y_test, y_model)
 
-            elif method == 'skl': 
+            elif method == 'ols_skl': 
                 o.skl_ols()
                 if data == 'train':
                     y_model = o.predict(X_train_deg)
-                    r2_ols['skl_train'] = r2(self.y_train, y_model)
+                    r2_ols['ols_skl_train'] = r2(self.y_train, y_model)
 
                 elif data == 'test': 
                     y_model = o.predict(X_test_deg)
-                    r2_ols['skl_test'] = r2(self.y_test, y_model)
+                    r2_ols['ols_skl_test'] = r2(self.y_test, y_model)
 
         return r2_ols
 
-    def __get_beta_ols(self, l, method_list, data_list): 
+    def __get_beta(self, l, method_list, data_list): 
         X_train_deg = self.X_train[:,:l-1]       # Slice matrix -> reduce poly deg
         X_test_deg  = self.X_test[:,:l-1]
         o = ols.OLS(X_train_deg, y_train)
@@ -151,11 +152,11 @@ class Analysis:
 
         for method in method_list:
 
-            if method == 'own': 
-                beta_ols['own_train'] = o.ols()
+            if method == 'ols_own': 
+                beta_ols['ols_own_train'] = o.ols()
 
-            elif method == 'skl': 
-                beta_ols['skl_train'] = o.skl_ols()
+            elif method == 'ols_skl': 
+                beta_ols['ols_skl_train'] = o.skl_ols()
 
         return beta_ols
 
@@ -181,14 +182,11 @@ if __name__ == '__main__':
     a = Analysis(X_train, X_test, y_train, y_test)
 
 
-    method = ['own', 'own', 'skl']
+    method = ['ols_own', 'ols_own', 'ols_skl']
     data = ['train', 'test', 'test']
-    score = ['beta']
+    score = ['r2', 'mse']
     tic = time.perf_counter()
-    score = a.calculate(max_poly_deg, score, method, data)
-    print(score)
-    print(np.sum(score['beta']['own_train']))
-    print(np.sum(score['beta']['skl_train']))
-    toc = time.perf_counter()
-    print(f'mse ols took: {toc-tic}')
+    s = a.calculate(max_poly_deg, score, method, data)
+
+    ps = a.calculate_loop(max_poly_deg, score, method, data)
 
