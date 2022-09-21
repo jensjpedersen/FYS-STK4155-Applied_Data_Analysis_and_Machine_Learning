@@ -35,6 +35,7 @@ class FrankeData:
     add_noise: float = 0
     uniform_data: bool = True
     data_dim: int = 2
+    test_size: float = 0.2
     
 
     x_range: list[int] = field(default_factory = lambda: [0, 1])
@@ -45,15 +46,20 @@ class FrankeData:
     z: np.ndarray = field(init=False, repr=False)
     X: np.ndarray = field(init=False, repr=False)
 
+    X_train: np.ndarray = field(init=False, repr=False)
+    X_test: np.ndarray = field(init=False, repr=False)
+    y_train: np.ndarray = field(init=False, repr=False)
+    y_test: np.ndarray = field(init=False, repr=False)
+
     def __post_init__(self):
         self.x, self.y = self.__generate_xy_data(self.uniform_data, self.data_dim)
         self.z = self.__franke_funciton(self.x, self.y, self.add_noise)
         self.X = self.__design_matrix(self.x, self.y, self.n)
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.z, test_size=self.test_size)
 
-    def get_train_test_data(self, test_size: float = 0.2):
-        """ Generates and returns tuple: (X_train, X_test, y_train, y_test) """
-        X_train, X_test, y_train, y_test = train_test_split(self.X, self.z, test_size=test_size)
-        return X_train, X_test, y_train, y_test
+    def get_train_test_data(self):
+        """ returns tuple: (X_train, X_test, y_train, y_test) """
+        return self.X_train, self.X_test, self.y_train, self.y_test
 
     def print_design_matrix(self): 
         n = self.n 
@@ -123,9 +129,6 @@ class FrankeData:
 
         N = len(x)
         l = int(((n+1)*(n+2)/2))		# Number of elements in beta
-        # if (l % 2) != 0:  
-        #     raise ValueError('Odd number devided by 2')
-        # l = int(l)
 
         X = np.ones((N,l))
         X = self.__jit_design_matrix_loop(x,y,n,X)
@@ -149,7 +152,7 @@ if __name__ == '__main__':
     f = FrankeData(n=6, N=1000, add_noise = False, data_dim = 2)
     toc = time.perf_counter()
     print(f'took: {toc-tic}s')
-    X_train, X_test, y_train, y_test = f.get_train_test_data(test_size=0.2)
+    X_train, X_test, y_train, y_test = f.get_train_test_data()
 
     f.plot()
 
