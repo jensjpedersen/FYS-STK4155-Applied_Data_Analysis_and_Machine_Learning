@@ -90,7 +90,8 @@ class FrankeData:
             y = np.linspace(self.y_range[0], self.y_range[1], self.N)
 
         if dim == 1:
-            pass
+            # Constant y values. Centered with respect to y_range 
+            y = np.ones_like(x) * (self.y_range[1] - self.y_range[0])/2
         elif dim == 2:
             x, y = np.meshgrid(x,y)
         else:
@@ -121,7 +122,7 @@ class FrankeData:
             y = np.ravel(y)
 
         N = len(x)
-        l = round(((n+1)*(n+2)/2))		# Number of elements in beta
+        l = int(((n+1)*(n+2)/2))		# Number of elements in beta
         # if (l % 2) != 0:  
         #     raise ValueError('Odd number devided by 2')
         # l = int(l)
@@ -145,9 +146,12 @@ class FrankeData:
 if __name__ == '__main__':
     tic = time.perf_counter()
 
-    f = FrankeData(n=6, N=2000, add_noise = False)
+    f = FrankeData(n=6, N=1000, add_noise = False, data_dim = 2)
     toc = time.perf_counter()
     print(f'took: {toc-tic}s')
+    X_train, X_test, y_train, y_test = f.get_train_test_data(test_size=0.2)
+
+    f.plot()
 
 
     # Making meshgrid of datapoints and compute Franke's function
