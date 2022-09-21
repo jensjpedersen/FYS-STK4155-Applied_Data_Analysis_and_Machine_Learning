@@ -10,13 +10,15 @@ importlib.reload(franke_data)
 importlib.reload(ols)
 importlib.reload(analysis)
 
+
 @dataclass
-class Plot:
+class PlotData:
+    """ Class plots values from dict provided to the initalizer """
     X_train: np.ndarray
     X_test: np.ndarray
     y_train: np.ndarray
     y_test: np.ndarray
-    poly_score: dict # 
+    poly_score: dict # Plots values from dict
 
     poly_deg: np.ndarray = field(init=False)
 
@@ -44,7 +46,7 @@ class Plot:
         plt.xlabel('poly deg')
         plt.ylabel('MSE')
         plt.legend()
-        plt.ylim(0,2)
+        # plt.ylim(0,2)
         plt.show()
 
     def plot_r2(self): 
@@ -126,24 +128,28 @@ class Plot:
 
 if __name__ == '__main__':
 
-    max_poly_deg = 8
-    n_data = 10000
+
+    np.random.seed(3)
+    max_poly_deg = 12
+    n_data = 1000
     test_size = 0.2
 
 
-    f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = 1, add_noise = 0)
+    f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = 1, add_noise = 0.2)
     X_train, X_test, y_train, y_test = f.get_train_test_data(test_size = test_size)
 
     score_list = ['mse', 'r2', 'beta']
-    method_list = ['ols_own', 'ols_own', 'ols_skl']
-    method_list = ['ols_skl']
-    method_list = ['ols_own']
-    data_list = ['train', 'test', 'test']
-    data_list = ['test']
+    # method_list = ['ols_own', 'ols_own', 'ols_skl']
+    # method_list = ['ols_skl']
+    # method_list = ['ols_own', 'ols_own']
+    method_list = ['ols_skl', 'ols_skl']
+    # method_list = ['ols_skl']
+    # data_list = ['train', 'test', 'test']
+    data_list = ['test', 'train']
 
     a = analysis.Analysis(X_train, X_test, y_train, y_test)
     score = a.calculate_loop(max_poly_deg, score_list, method_list, data_list)
 
-    p = Plot(X_train, X_test, y_train, y_test, score)
+    p = PlotData(X_train, X_test, y_train, y_test, score)
     p.plot_mse()
 
