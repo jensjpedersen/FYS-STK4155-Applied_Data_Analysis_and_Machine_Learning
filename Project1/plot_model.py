@@ -7,6 +7,7 @@ import franke_data
 import time
 import sys
 import ipdb
+import pandas as pd
 import ols 
 import bdb
 importlib.reload(franke_data)
@@ -49,15 +50,22 @@ class PlotModel:
 
 
         if data_dim == 1: 
-            # NOTE: Change behvaour with plot call args. 
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
+            # NOTE: Change behvaour with plot call args. 
             self.__1d_plot_data_points('train', fig, ax)
             self.__1d_plot_model(data, method, ax)
             self.__1d_plot_franke_funciton(ax)
 
-        # elif data_dim == 2:
+        elif data_dim == 2:
 
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            self.__2d_plot_franke_fuctnion(ax)
+            self.__2d_plot_model(method, ax)
+
+        else:
+            raise ValueError
         #     x = self.x 
         #     y = self.y
         #     z = self.z
@@ -72,9 +80,6 @@ class PlotModel:
         #     elif self.data_dim == 1:
         #         ax.plot(x, y, z)
         #     plt.show()
-
-        else:
-            raise NotImplementedError
 
 
         plt.xlabel('x')
@@ -147,15 +152,62 @@ class PlotModel:
         ax.plot(x, y, z, linewidth=1, label = 'Franke fuction')
 
 
-    def plot_model_2d(self, data_dim:int): 
-        # N =
-        if data_dim == 2: 
-            pass
+    def __2d_plot_franke_fuctnion(self, ax): 
+        x = self.franke_object.x
+        y = self.franke_object.y
+        z = self.__franke_funciton(x, y)
+        surf = ax.plot_surface(x, y, z, label='Franke function')#, label = 'Franke function')
+        surf._edgecolors2d = surf._edgecolor3d
+        surf._facecolors2d = surf._facecolor3d
 
-        x_data = self.X_train[:, 1] 
-        y_data = self.X_train[:, 2]
 
-        breakpoint() 
+    def __2d_plot_model(self, model: str, ax): 
+        # removed Dataset varalbe, meaningless i prediction of datapoints
+        # TODO: remove daset parameters from other methods. 
+
+        # ----------------------------
+        if model == 'ols_own': 
+            o = ols.OLS(self.X_train, self.y_train)
+            o.ols()
+
+        elif model == 'ols_skl':
+            o = ols.OLS(self.X_train, self.y_train)
+            o.skl_ols()
+
+        else:
+            raise ValueError
+
+        # ^^^^^^^^^^^^^^^^^^^^^^   copy from 1D
+
+        # If 2 dim
+        z_model = o.predict(self.franke_object.X)
+        N = self.franke_object.N
+        Z = z_model.reshape(N, N)
+        X = self.franke_object.x
+        Y = self.franke_object.y
+
+        surf = ax.plot_surface(X, Y, Z, label=f'Model: {model}')#, label = 'Franke function')
+        surf._edgecolors2d = surf._edgecolor3d
+        surf._facecolors2d = surf._facecolor3d
+
+        
+
+
+        # pd.DataFrame(a).to_csv('sample.csv')
+        # if self.data_dim > 1:
+        #     z = z.reshape(self.N, self.N)
+    
+        # plt.imsave('matrix.jpeg', x)
+
+        # x_data = self.X_train[:, 1] 
+        # y_data = self.X_train[:, 2]
+        # x_data = x_data.reshape()
+        # y_data = y_data.reshape()
+        # print('2d plot franke function')
+
+        # x_data = self.X_train[:, 1] 
+        # y_data = self.X_train[:, 2]
+
         # plot franke function 
 
     #     print('2d')
@@ -176,12 +228,12 @@ if __name__ == '__main__':
     np.random.seed(0)
 
 
-    max_poly_deg = 6
-    n_data = 1000
+    max_poly_deg = 1
+    n_data = 100
     # n_data = 2000000
     test_size = 0.2
     noise = 0.01
-    data_dim = 1
+    data_dim = 2
 
     # XXX:  fix noise plot 
     f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = data_dim, add_noise = noise, test_size = test_size)
