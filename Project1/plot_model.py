@@ -16,10 +16,18 @@ plt.style.use('fivethirtyeight')
 
 @dataclass(frozen=True)
 class PlotModel: 
-    X_train: np.ndarray
-    X_test: np.ndarray
-    y_train: np.ndarray
-    y_test: np.ndarray
+    franke_object: franke_data.FrankeData
+    X_train: np.ndarray = field(init=False)
+    X_test: np.ndarray = field(init=False)
+    y_train: np.ndarray = field(init=False)
+    y_test: np.ndarray = field(init=False)
+
+    def __post_init__(self):
+        train_test_split = self.franke_object.get_train_test_data()
+        object.__setattr__(self, 'X_train', train_test_split[0])
+        object.__setattr__(self, 'X_test', train_test_split[1])
+        object.__setattr__(self, 'y_train', train_test_split[2])
+        object.__setattr__(self, 'y_test', train_test_split[3])
 
     def __franke_funciton(self, x: np.ndarray, y:np.ndarray):
         term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
@@ -126,7 +134,7 @@ class PlotModel:
         y = y_data[sort_index]
         z = z_model[sort_index]
 
-        ax.plot(x, y, z, linewidth=2, label = f'{dataset} data prediction')
+        ax.plot(x, y, z, linewidth=2, label = f'{dataset} data prediction with {model}')
 
     def __1d_plot_franke_funciton(self, ax): 
         x_data = self.X_train[:, 1] 
@@ -139,7 +147,17 @@ class PlotModel:
         ax.plot(x, y, z, linewidth=1, label = 'Franke fuction')
 
 
-    # def __2d_plot_model(): 
+    def plot_model_2d(self, data_dim:int): 
+        # N =
+        if data_dim == 2: 
+            pass
+
+        x_data = self.X_train[:, 1] 
+        y_data = self.X_train[:, 2]
+
+        breakpoint() 
+        # plot franke function 
+
     #     print('2d')
     # fig = plt.figure()
     # ax = fig.add_subplot(111, projection='3d')
@@ -155,20 +173,27 @@ class PlotModel:
 
 if __name__ == '__main__': 
 
+    np.random.seed(0)
 
 
-    max_poly_deg = 1
+    max_poly_deg = 6
     n_data = 1000
     # n_data = 2000000
     test_size = 0.2
     noise = 0.01
+    data_dim = 1
 
     # XXX:  fix noise plot 
-    f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = 1, add_noise = noise)
-    X_train, X_test, y_train, y_test = f.get_train_test_data(test_size = test_size) # XXX pass to function call
+    f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = data_dim, add_noise = noise, test_size = test_size)
+    X_train, X_test, y_train, y_test = f.get_train_test_data() # XXX pass to function call
 
-    a = PlotModel(X_train, X_test, y_train, y_test) 
+    
+    a = PlotModel(f) 
+    a.plot(method='ols_own', data='test', data_dim = data_dim)
+
+
+    # a.plot_model_2d(data_dim = 2)
     # a.plot_model(method = 'ols_own', data = 'train', data_dim = 1)
-    a.plot(method = 'ols_skl', data = 'test', data_dim = 1)
+    # a.plot(method = 'ols_skl', data = 'test', data_dim = 1)
+    # a.plot(method = 'ols_own', data = 'test', data_dim = 1)
 
-    sys.exit()
