@@ -38,7 +38,8 @@ class PlotModel:
         return term1 + term2 + term3 + term4
 
 
-    def plot(self, method: str, data: str, data_dim: int): 
+    def plot(self, method: str, data: str): 
+        data_dim = self.franke_object.data_dim
 
         # if data_dim == 2:
         #     N = np.sqrt(len(x))
@@ -53,7 +54,7 @@ class PlotModel:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             # NOTE: Change behvaour with plot call args. 
-            self.__1d_plot_data_points('train', fig, ax)
+            self.__plot_data_points(data, ax)
             self.__1d_plot_model(data, method, ax)
             self.__1d_plot_franke_funciton(ax)
 
@@ -63,6 +64,7 @@ class PlotModel:
             ax = fig.add_subplot(111, projection='3d')
             self.__2d_plot_franke_fuctnion(ax)
             self.__2d_plot_model(method, ax)
+            self.__plot_data_points(data, ax)
 
         else:
             raise ValueError
@@ -88,7 +90,7 @@ class PlotModel:
         plt.show()
 
 
-    def __1d_plot_data_points(self, dataset: str, fig, ax):
+    def __plot_data_points(self, dataset: str, ax):
         if dataset == 'train':
             x_data = self.X_train[:, 1] 
             y_data = self.X_train[:, 2]
@@ -107,7 +109,7 @@ class PlotModel:
         z = z_data[sort_index]
 
         # Plot z data
-        ax.plot(x, y, z, '.', markersize = 5, label = f'{dataset} data')
+        ax.plot(x, y, z, '.', markersize = 2, alpha = 0.5, label = f'{dataset} data')
 
 
     def __1d_plot_model(self, dataset: str, model: str, ax): 
@@ -232,7 +234,7 @@ if __name__ == '__main__':
     n_data = 100
     # n_data = 2000000
     test_size = 0.2
-    noise = 0.01
+    noise = 0.1
     data_dim = 2
 
     # XXX:  fix noise plot 
@@ -241,7 +243,7 @@ if __name__ == '__main__':
 
     
     a = PlotModel(f) 
-    a.plot(method='ols_own', data='test', data_dim = data_dim)
+    a.plot(method='ols_own', data='train')
 
 
     # a.plot_model_2d(data_dim = 2)
