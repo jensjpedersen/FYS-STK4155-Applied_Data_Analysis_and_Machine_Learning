@@ -11,10 +11,55 @@ importlib.reload(franke_data)
 importlib.reload(ols)
 importlib.reload(analysis)
 
-@dataclass
+
+@dataclass(frozen=True) 
 class ResamplingAnalysis: 
+    franke_object: franke_data.FrankeData
+
+    X_train: np.ndarray = field(init=False, repr=False)
+    X_test: np.ndarray = field(init=False, repr=False)
+    y_train: np.ndarray = field(init=False, repr=False)
+    y_test: np.ndarray = field(init=False, repr=False)
+
+    def __post_init__(self):
+        train_test_split = self.franke_object.get_train_test_data()
+        object.__setattr__(self, 'X_train', train_test_split[0])
+        object.__setattr__(self, 'X_test', train_test_split[1])
+        object.__setattr__(self, 'y_train', train_test_split[2])
+        object.__setattr__(self, 'y_test', train_test_split[3])
+
+
+    def calculate_scores_loop(self, methods: tuple, n_resamples:int):
+        max_poly_deg = self.franke_object.n
+        resampling_scores = dict()
+        # resampling_scores = {'mse': {}, 'bias': {}, 'variance': {}}
+        
+        for deg in range(1, max_poly_deg + 1): 
+            resampling_scores[str(deg)] = {'mse': {}, 'bias': {}, 'variance': {}}
+
+            l = int(((deg+1)*(deg+2)/2))		# Number of elements in beta
+            _X_train = self.X_train[:, :l+1] 
+            _X_test = self.X_test[:, :l+1]
+            
+            # bias variance tradeoff make sence on train data
+            r = Resampling(_X_train, _X_test, self.y_train)
+
+            for method in methods: 
+                y_boots_pred = r.bootstrap(n_resamples, method)
+                rs = ResamplingScores(self.y_test, y_boots_pred)
+                resampling_scores[str(deg)]['mse'][str(method)] = rs.mse()
+                resampling_scores[str(deg)]['bias'][str(method)] = rs.bias()
+                resampling_scores[str(deg)]['variance'][str(method)] = rs.variance() 
+
+        return resampling_scores
+
+
+
+@dataclass
+class ResamplingScores: 
     y_test: np.ndarray
     y_pred: np.ndarray
+    score_dict: dict = field(init=False)
 
     def __post_init__(self):
         assert(np.size(self.y_test) == np.shape(self.y_pred)[0])
@@ -78,22 +123,28 @@ class Resampling:
         return y_pred
 
 
+def plot_bias_variance_tradeoff(scores): 
+    pass
 
 
 if __name__ == '__main__': 
     r = Resampling
 
-    n = 4  # Poly deg
-    N = 10000 # dataset size
+    n = 10  # Poly deg
+    N = 1000 # dataset size
     f = franke_data.FrankeData(n, N, data_dim = 1)
 
-    X_train, X_test, y_train, y_test = f.get_train_test_data(test_size = 0.2)
-    r = Resampling(X_train, X_test, y_train)
-    y_boots_pred = r.bootstrap(100, 'ols_own')
+    X_train, X_test, y_train, y_test = f.get_train_test_data()
 
-    ra = ResamplingAnalysis(y_test, y_boots_pred)
-    mse = ra.mse()
-    bias = ra.bias()
-    variance = ra.variance()
+
+    max_poly_deg = n
+    method = 'ols_own' 
+    methods = 'ols_own', 'ols_skl'
+    n_resamples = 100
+
+    ra = ResamplingAnalysis(f)
+    scores = ra.calculate_scores_loop(n_resamples=100, methods = methods)
+
+
 
 
