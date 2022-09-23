@@ -29,7 +29,7 @@ class ResamplingAnalysis:
         object.__setattr__(self, 'y_test', train_test_split[3])
 
 
-    def calculate_scores_loop(self, methods: list, n_resamples:int):
+    def calculate_scores_loop(self, regression_methods: list, n_resamples:int):
         max_poly_deg = self.franke_object.n
         resampling_scores = dict()
         # resampling_scores = {'mse': {}, 'bias': {}, 'variance': {}}
@@ -44,7 +44,7 @@ class ResamplingAnalysis:
             # bias variance tradeoff make sence on train data
             r = Resampling(_X_train, _X_test, self.y_train)
 
-            for method in methods: 
+            for method in regression_methods: 
                 y_boots_pred = r.bootstrap(n_resamples, method)
                 rs = ResamplingScores(self.y_test, y_boots_pred)
                 resampling_scores[str(deg)]['mse'][str(method)] = rs.mse()
@@ -92,6 +92,9 @@ class Resampling:
         assert(np.size(self.y_train) == np.shape(self.X_train)[0])
         assert(np.shape(self.X_test)[0] < np.shape(self.X_train)[0])
 
+    def kfold(self):
+        pass
+
     def bootstrap(self, n_resamples: int, method: str):
         """
         Parameters:
@@ -106,21 +109,27 @@ class Resampling:
 
         for i in range(n_resamples):
             X_, y_ = skl.utils.resample(self.X_train, self.y_train)
+            y_pred[:,i] = self.regression_method(method, X_, y_)
+        return y_pred
 
-            # Analysis class goes in nice here
-            if method == 'ols_skl': 
-                o = ols.OLS(X_, y_)
-                o.skl_ols()
-                y_pred[:,i] = o.predict(self.X_test)
+    def regression_method(self, method, X_train, y_train):
+        X_ = X_train
+        y_ = y_train
 
-            elif method == 'ols_own': 
-                o = ols.OLS(X_, y_)
-                o.ols()
-                y_pred[:,i] = o.predict(self.X_test)
-            else:
-                raise ValueError('Valide methods are: ols_skl, ols_own')
+        if method == 'ols_skl': 
+            o = ols.OLS(X_, y_)
+            o.skl_ols()
+            y_pred = o.predict(self.X_test)
+
+        elif method == 'ols_own': 
+            o = ols.OLS(X_, y_)
+            o.ols()
+            y_pred = o.predict(self.X_test)
+        else:
+            raise ValueError('Valide methods are: ols_skl, ols_own')
 
         return y_pred
+
 
 
 def plot_bias_variance_tradeoff(scores): 
@@ -146,8 +155,8 @@ if __name__ == '__main__':
     np.random.seed(11)
     r = Resampling
 
-    n = 10   # Poly deg
-    N = 100 # dataset size
+    n = 12   # Poly deg
+    N = 200 # dataset size
     n_resamples = 100
     noise = 0.05
     f = franke_data.FrankeData(n, N, data_dim = 1, add_noise = noise)
@@ -161,9 +170,14 @@ if __name__ == '__main__':
     methods = ['ols_own', 'ols_skl']
 
     ra = ResamplingAnalysis(f)
-    scores = ra.calculate_scores_loop(n_resamples=n_resamples, methods = methods)
+    scores = ra.calculate_scores_loop(n_resamples=n_resamples, regression_methods = methods)
 
     plot_bias_variance_tradeoff(scores)
+
+    # resampling_methods = [boots, kfold_own, kfold_skl]
+
+
+
 
 
 
