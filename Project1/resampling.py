@@ -29,7 +29,7 @@ class ResamplingAnalysis:
         object.__setattr__(self, 'y_test', train_test_split[3])
 
 
-    def calculate_scores_loop(self, methods: tuple, n_resamples:int):
+    def calculate_scores_loop(self, methods: list, n_resamples:int):
         max_poly_deg = self.franke_object.n
         resampling_scores = dict()
         # resampling_scores = {'mse': {}, 'bias': {}, 'variance': {}}
@@ -55,11 +55,11 @@ class ResamplingAnalysis:
 
 
 
-@dataclass
+@dataclass(frozen=True)
 class ResamplingScores: 
     y_test: np.ndarray
     y_pred: np.ndarray
-    score_dict: dict = field(init=False)
+    # score_dict: dict = field(init=False)
 
     def __post_init__(self):
         assert(np.size(self.y_test) == np.shape(self.y_pred)[0])
@@ -67,22 +67,22 @@ class ResamplingScores:
             raise ValueError('y_pred should be resampled in n samples')
 
     def bias(self): 
-        self.y_test = self.y_test.reshape(np.shape(self.y_pred)[0], 1) # reshape array for subtraction to work 
-        bias = np.mean( (self.y_test - np.mean(self.y_pred, axis=1, keepdims=True))**2 )
+        y_test = self.y_test.reshape(np.shape(self.y_pred)[0], 1) # reshape array for subtraction to work 
+        bias = np.mean( (y_test - np.mean(self.y_pred, axis=1, keepdims=True))**2 )
         return bias
 
     def variance(self): 
-        self.y_test = self.y_test.reshape(np.shape(self.y_pred)[0], 1) # reshape array for subtraction to work 
+        y_test = self.y_test.reshape(np.shape(self.y_pred)[0], 1) # reshape array for subtraction to work 
         variance = np.mean( np.var(self.y_pred, axis=1, keepdims=True) )
         return variance
 
     def mse(self): 
-        self.y_test = self.y_test.reshape(np.shape(self.y_pred)[0], 1) # reshape array for subtraction to work 
-        mse = np.mean( np.mean((self.y_test - self.y_pred)**2, axis=1, keepdims=True) )
+        y_test = self.y_test.reshape(np.shape(self.y_pred)[0], 1) # reshape array for subtraction to work 
+        mse = np.mean( np.mean((y_test - self.y_pred)**2, axis=1, keepdims=True) )
         return mse
 
 
-@dataclass
+@dataclass(frozen=True)
 class Resampling: 
     X_train: np.ndarray
     X_test: np.ndarray
@@ -109,7 +109,7 @@ class Resampling:
 
             # Analysis class goes in nice here
             if method == 'ols_skl': 
-                o = ols.OLS(self.X_train, y_train)
+                o = ols.OLS(X_, y_)
                 o.skl_ols()
                 y_pred[:,i] = o.predict(self.X_test)
 
@@ -124,26 +124,46 @@ class Resampling:
 
 
 def plot_bias_variance_tradeoff(scores): 
-    pass
+    # Get dict info
+    poly_deg = np.array([ int(i) for i in scores ])
+    score_names = list(scores['1'].keys())
+    method_names = list(scores['1'][score_names[0]].keys())
+
+    # Plot mse, bias and variance.  
+    for method in method_names: 
+        for score in score_names: 
+            vals = np.array([ scores[str(deg)][score][method] for deg in poly_deg ])
+            plt.plot(poly_deg, vals, label = f'{score} from {method}')
+
+    plt.legend()
+    plt.xlabel('Polynomial degree')
+    plt.show()
+            
+
 
 
 if __name__ == '__main__': 
+    np.random.seed(11)
     r = Resampling
 
-    n = 10  # Poly deg
-    N = 1000 # dataset size
-    f = franke_data.FrankeData(n, N, data_dim = 1)
+    n = 10   # Poly deg
+    N = 100 # dataset size
+    n_resamples = 100
+    noise = 0.05
+    f = franke_data.FrankeData(n, N, data_dim = 1, add_noise = noise)
 
     X_train, X_test, y_train, y_test = f.get_train_test_data()
 
 
     max_poly_deg = n
-    method = 'ols_own' 
-    methods = 'ols_own', 'ols_skl'
-    n_resamples = 100
+    methods = ['ols_own']
+    methods = ['ols_skl']
+    methods = ['ols_own', 'ols_skl']
 
     ra = ResamplingAnalysis(f)
-    scores = ra.calculate_scores_loop(n_resamples=100, methods = methods)
+    scores = ra.calculate_scores_loop(n_resamples=n_resamples, methods = methods)
+
+    plot_bias_variance_tradeoff(scores)
 
 
 
