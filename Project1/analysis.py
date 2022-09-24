@@ -91,8 +91,8 @@ class Analysis:
 
 
     def __get_mse(self, l, method_list, data_list): 
-        X_train_deg = self.X_train[:,:l-1]       # Slice matrix -> reduce poly deg
-        X_test_deg  = self.X_test[:,:l-1]
+        X_train_deg = self.X_train[:,:l]       # Slice matrix -> reduce poly deg
+        X_test_deg  = self.X_test[:,:l]
         o = ols.OLS(X_train_deg, self.y_train)
 
         # Return values 
@@ -123,8 +123,8 @@ class Analysis:
         return mse_ols
 
     def __get_r2(self, l, method_list, data_list): 
-        X_train_deg = self.X_train[:,:l-1]       # Slice matrix -> reduce poly deg
-        X_test_deg  = self.X_test[:,:l-1]
+        X_train_deg = self.X_train[:,:l]       # Slice matrix -> reduce poly deg
+        X_test_deg  = self.X_test[:,:l]
         o = ols.OLS(X_train_deg, self.y_train)
 
         # Return values 
@@ -155,8 +155,8 @@ class Analysis:
         return r2_ols
 
     def __get_beta(self, l, method_list, data_list): 
-        X_train_deg = self.X_train[:,:l-1]       # Slice matrix -> reduce poly deg
-        X_test_deg  = self.X_test[:,:l-1]
+        X_train_deg = self.X_train[:,:l]       # Slice matrix -> reduce poly deg
+        # X_test_deg  = self.X_test[:,:l]
         o = ols.OLS(X_train_deg, self.y_train)
 
         # Return values 
