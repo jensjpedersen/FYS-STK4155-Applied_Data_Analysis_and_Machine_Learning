@@ -61,12 +61,22 @@ class FrankeData:
         """ returns tuple: (X_train, X_test, y_train, y_test) """
         return self.X_train, self.X_test, self.y_train, self.y_test
 
-    def get_X_train(self): 
-        return self.X_train
 
+    def get_l(self, deg): 
+        l = int(((deg+1)*(deg+2)/2))		# Number of elements in beta
+        return l 
 
-    def get_X_test(self): 
-        return self.X_test
+    def get_X_train(self, deg: int=None): 
+        if deg == None: 
+            return self.X_train
+
+        return self.X_train[:, :self.get_l(deg)-1]
+
+    def get_X_test(self, deg: int=None): 
+        if deg == None: 
+            return self.X_test
+
+        return self.X_test[:, :self.get_l(deg)-1]
 
 
     def get_y_train(self):
@@ -76,20 +86,21 @@ class FrankeData:
     def get_y_test(self): 
         return self.y_test
 
-    def get_X_vali(self):
+    def get_X_vali(self, deg: int=None):
         pass
 
     def get_y_val(self): 
         pass
 
-    def get_X(self):
-        return self.X
+    def get_X(self, deg: int=None):
+        if deg == None: 
+            return self.X
+
+        return self.X[:, :self.get_l(deg)-1]
+
 
     def get_y(self):
         return self.y
-
-
-
 
 
     def print_design_matrix(self): 
