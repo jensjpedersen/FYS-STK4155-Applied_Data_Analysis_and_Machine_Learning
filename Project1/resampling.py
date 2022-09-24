@@ -84,11 +84,17 @@ class ResamplingScores:
 
 @dataclass(frozen=True)
 class Resampling: 
-    X_train: np.ndarray
-    X_test: np.ndarray
-    y_train: np.ndarray
+    franke_object: franke_data.FrankeData
+    X_train: np.ndarray = field(init=False, repr=False)
+    X_test: np.ndarray = field(init=False, repr=False)
+    y_train: np.ndarray = field(init=False, repr=False)
 
     def __post_init__(self):
+        train_test_split = self.franke_object.get_train_test_data()
+        object.__setattr__(self, 'X_train', train_test_split[0])
+        object.__setattr__(self, 'X_test', train_test_split[1])
+        object.__setattr__(self, 'y_train', train_test_split[2])
+        # object.__setattr__(self, 'y_test', train_test_split[3])
         assert(np.size(self.y_train) == np.shape(self.X_train)[0])
         assert(np.shape(self.X_test)[0] < np.shape(self.X_train)[0])
 
@@ -105,7 +111,7 @@ class Resampling:
         Returns:
             Matrix with predicted values of size:(n_test_data, n_resamples)
         """
-        y_pred = np.zeros((np.shape(X_test)[0], n_resamples))
+        y_pred = np.zeros((np.shape(self.X_test)[0], n_resamples))
 
         for i in range(n_resamples):
             X_, y_ = skl.utils.resample(self.X_train, self.y_train)
@@ -172,13 +178,18 @@ if __name__ == '__main__':
     ra = ResamplingAnalysis(f)
     scores = ra.calculate_scores_loop(n_resamples=n_resamples, regression_methods = methods)
 
-    plot_bias_variance_tradeoff(scores)
+    re = Resampling(f)
+    # plot_bias_variance_tradeoff(scores)
 
     # resampling_methods = [boots, kfold_own, kfold_skl]
 
 
 
-
+    # k-fold cross validtaion
+    # shuffle the dataset
+    # Split dataest into k groups
+    # Choose one group as test data
+    # Remaining gropus as training
 
 
 
