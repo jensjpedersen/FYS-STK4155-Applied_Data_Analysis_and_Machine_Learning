@@ -61,6 +61,37 @@ class FrankeData:
         """ returns tuple: (X_train, X_test, y_train, y_test) """
         return self.X_train, self.X_test, self.y_train, self.y_test
 
+    def get_X_train(self): 
+        return self.X_train
+
+
+    def get_X_test(self): 
+        return self.X_test
+
+
+    def get_y_train(self):
+        return self.y_train
+
+
+    def get_y_test(self): 
+        return self.y_test
+
+    def get_X_vali(self):
+        pass
+
+    def get_y_val(self): 
+        pass
+
+    def get_X(self):
+        return self.X
+
+    def get_y(self):
+        return self.y
+
+
+
+
+
     def print_design_matrix(self): 
         n = self.n 
         print(f"X[:,0] = 1")
@@ -105,7 +136,7 @@ class FrankeData:
 
         return x, y 
 
-    def __franke_funciton(self, x: np.ndarray, y: np.ndarray, add_noise = False):
+    def __franke_funciton(self, x: np.ndarray, y: np.ndarray, add_noise: float):
         if len(x.shape) > 1:
             x = np.ravel(x)
             y = np.ravel(y)
