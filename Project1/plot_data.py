@@ -6,26 +6,21 @@ import importlib
 import franke_data
 import ols 
 import analysis 
+import plot_model
 importlib.reload(franke_data)
 importlib.reload(ols)
 importlib.reload(analysis)
+importlib.reload(plot_model)
 
 
 @dataclass
 class PlotData:
     """ Class plots values from dict provided to the initalizer """
-    X_train: np.ndarray
-    X_test: np.ndarray
-    y_train: np.ndarray
-    y_test: np.ndarray
     poly_score: dict # Plots values from dict
 
     poly_deg: np.ndarray = field(init=False)
 
-
     def __post_init__(self):
-        assert(np.size(self.X_train) > np.size(self.X_test))
-        assert(np.size(self.y_train) > np.size(self.y_test))
         self.poly_deg = np.array([ int(i) for i in self.poly_score.keys() ])
 
 
@@ -75,10 +70,8 @@ class PlotData:
                   'Update dict and re-run constructor.')
             return
 
-        n_features = np.shape(self.X_test)[1]
-
-        f = plt.figure()
-
+        plt.figure()
+        # TODO: Differnet marker colors, 
         style = ['bo', 'ro', 'ko']
         for i, label in enumerate(keys): 
             for p in self.poly_deg:
@@ -93,7 +86,6 @@ class PlotData:
         plt.legend()
         plt.show()
 
-                
 
         # XXX: plot horizontal lines
         # # beta = [ self.poly_score[str(j)]['beta'][j] ]
@@ -129,27 +121,46 @@ class PlotData:
 if __name__ == '__main__':
 
 
-    np.random.seed(3)
+    np.random.seed(0)
     max_poly_deg = 12
-    n_data = 1000
+    n_data = 100
     test_size = 0.2
+    noise = 1
+    data_dim = 2
+
+    # # np.random.seed(3)
+    # max_poly_deg = 25
+    # n_data = 1000
+    # test_size = 0.2
+    # noise = 0.1
 
 
-    f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = 1, add_noise = 0.2)
-    X_train, X_test, y_train, y_test = f.get_train_test_data(test_size = test_size)
+    f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = data_dim, add_noise = noise, test_size = test_size)
+    X_train, X_test, y_train, y_test = f.get_train_test_data()
 
     score_list = ['mse', 'r2', 'beta']
-    # method_list = ['ols_own', 'ols_own', 'ols_skl']
+
+    method_list = ['ols_own']
     # method_list = ['ols_skl']
-    # method_list = ['ols_own', 'ols_own']
-    method_list = ['ols_skl', 'ols_skl']
+    data_list = ['test']
+
+    method_list = ['ols_own', 'ols_skl']
     # method_list = ['ols_skl']
-    # data_list = ['train', 'test', 'test']
-    data_list = ['test', 'train']
+    # data_list = ['test']
+    # method_list = ['ols_skl']
+    data_list = ['test', 'test']
+    
+
 
     a = analysis.Analysis(X_train, X_test, y_train, y_test)
     score = a.calculate_loop(max_poly_deg, score_list, method_list, data_list)
 
-    p = PlotData(X_train, X_test, y_train, y_test, score)
+    p = PlotData(score)
+    p.plot_beta()
     p.plot_mse()
+    p.plot_r2()
 
+    # TODO: implement poly deg parameter in plot model
+    pm = plot_model.PlotModel(f)
+    pm.plot(method = 'ols_own', data = 'test')
+    pm.plot(method = 'ols_skl', data = 'test')
