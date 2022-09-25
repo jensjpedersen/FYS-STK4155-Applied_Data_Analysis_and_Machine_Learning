@@ -177,30 +177,26 @@ if __name__ == '__main__':
 
 
 
+
+    np.random.seed(0)
     max_poly_deg = 3
     n_data = 1000
     # n_data = 2000000
     test_size = 0.2
     noise = 0
 
-    # XXX:  fix noise plot 
-    f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = 1, add_noise = noise)
-    X_train, X_test, y_train, y_test = f.get_train_test_data(test_size = test_size) # XXX pass to function call
-    
-    # f.print_design_matrix()
+    f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = 1, add_noise = noise, test_size = test_size)
+    X_train, X_test, y_train, y_test = f.get_train_test_data() # XXX pass to function call
 
-    # Do regression 
-    # get_pred
-    # pass pred and test to analysis 
-
+    # XXX: change takes franke object
     a = Analysis(X_train, X_test, y_train, y_test) 
-    # a.plot_model(method = 'ols_own', data = 'train', data_dim = 1)
 
-    method = ['ols_own', 'ols_own', 'ols_skl']
-    data = ['train', 'test', 'test']
+    method = ['ols_own', 'ols_skl']
+    data = ['test', 'test']
     score = ['r2', 'mse']
-    tic = time.perf_counter()
+    # score = ['beta']
     s = a.calculate(max_poly_deg, score, method, data)
+    # print(s)
 
     ps = a.calculate_loop(max_poly_deg, score, method, data)
 
