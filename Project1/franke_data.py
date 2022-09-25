@@ -70,13 +70,13 @@ class FrankeData:
         if deg == None: 
             return self.X_train
 
-        return self.X_train[:, :self.get_l(deg)-1]
+        return self.X_train[:, :self.get_l(deg)]
 
     def get_X_test(self, deg: int=None): 
         if deg == None: 
             return self.X_test
 
-        return self.X_test[:, :self.get_l(deg)-1]
+        return self.X_test[:, :self.get_l(deg)]
 
 
     def get_y_train(self):
@@ -86,21 +86,43 @@ class FrankeData:
     def get_y_test(self): 
         return self.y_test
 
-    def get_X_vali(self, deg: int=None):
+    def get_X_validation(self, deg: int=None):
         pass
 
-    def get_y_val(self): 
+    def get_y_validataion(self): 
         pass
+
 
     def get_X(self, deg: int=None):
         if deg == None: 
             return self.X
 
-        return self.X[:, :self.get_l(deg)-1]
+        return self.X[:, :self.get_l(deg)]
 
 
     def get_y(self):
         return self.y
+
+    def get_validation(self, deg: int=None): 
+        pass
+
+    def get_test(self, deg: int=None): 
+        if deg == None: 
+            return self.X_test, self.y_test
+
+        return self.X_test[:, :self.get_l(deg)], self.y_test
+
+    def get_train(self, deg: int=None): 
+        if deg == None: 
+            return self.X_train, self.y_train
+
+        return self.X_train[:, :self.get_l(deg)], self.y_train
+
+    # def get_data(self, deg: int=None): 
+    #     if deg == None: 
+    #         return self.X, self.y
+
+    #     return self.X[:, :self.get_l(deg)], self.y
 
 
     def print_design_matrix(self): 
