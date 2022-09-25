@@ -109,13 +109,17 @@ class Resampling:
                           Values: 'ols_skl', 'ols_own'
 
         Returns:
-            Matrix with predicted values of size:(n_test_data, n_resamples)
+            y-pred: Matrix with predicted values of size:(n_test_data, n_resamples)
         """
-        y_pred = np.zeros((np.shape(self.X_test)[0], n_resamples))
+        # Define trianing and test data
+        X_test = self.franke_object.get_X_test()
+        X_train, y_train = self.franke_object.get_train()
+
+        y_pred = np.zeros((np.shape(X_test)[0], n_resamples))
 
         for i in range(n_resamples):
-            X_, y_ = skl.utils.resample(self.X_train, self.y_train)
-            y_pred[:,i] = self.regression_method(method, X_, y_)
+            X_, y_ = skl.utils.resample(X_train, y_train)
+            y_pred[:,i] = self.regression_method(method, X_, y_, X_test)
         return y_pred
 
     def regression_method(self, method, X_train, y_train):
