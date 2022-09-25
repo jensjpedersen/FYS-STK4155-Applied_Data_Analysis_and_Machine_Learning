@@ -7,12 +7,6 @@ import importlib
 import franke_data
 importlib.reload(franke_data)
 
-def plot_franke_1d(x, y, z):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot(x, y, z)
-    plt.show()
-
 
 @dataclass
 class OLS: 
@@ -25,6 +19,7 @@ class OLS:
 
     linreg: LinearRegression = field(init=False, default_factory=LinearRegression)
 
+
     def ols(self): 
         self.method = 'own'
         X_train = self.X_train
@@ -35,12 +30,12 @@ class OLS:
 
     def skl_ols(self):
         self.method = 'skl'
-        linreg = LinearRegression(fit_intercept = True)
+        linreg = LinearRegression(fit_intercept = False)
         linreg.fit(self.X_train, self.y_train)
         self.linreg = linreg
-        beta = linreg.coef_
-        beta[0] = linreg.intercept_
+        beta = linreg.coef_.copy()
         self.beta = beta
+
         return self.beta
 
     def predict(self, X: np.ndarray):
@@ -52,43 +47,28 @@ class OLS:
 
 
 
+
+
 if __name__ == '__main__': 
     n = 4  # Poly deg
-    N = 100 # dataset size
-    f = franke_data.FrankeData(n, N, data_dim = 1)
+    N = 10000 # dataset size
+    test_size = 0.2
+    f = franke_data.FrankeData(n, N, data_dim = 1, test_size=0.2)
 
-    X_train, X_test, y_train, y_test = f.get_train_test_data(test_size = 0.2)
+    X_train, y_train = f.get_train()
+    X_test = f.get_X_test()
     o = OLS(X_train, y_train)
-
-
     # Ols training
     o.ols()
-    y_tilde1 = o.predict(X_test)
+
+    o.predict(X_test)
+
+    # o.plot_model(X_test, data_dim = 1)
+    # y_tilde1 = o.predict(X_test)
     
-    o.skl_ols()
-    y_tilde2 = o.predict(X_test)
+    # o.skl_ols()
+    # y_tilde2 = o.predict(X_test)
     
 
-
-    fig = plt.figure()
-
-    sys.exit()
-
-    x = X_test[:, 1]
-    y = X_test[:, 2]
-    z = y_test
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot(x, y, z, label='data')
-
-
-    z = y_tilde1
-    # ax = fig.add_subplot(111, projection='3d')
-    ax.plot(x, y, z, label='own')
-
-    z = y_tilde2
-    # ax = fig.add_subplot(111, projection='3d')
-    ax.plot(x, y, z, label='skl')
-    plt.legend()
-    plt.show()
     
 
