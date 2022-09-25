@@ -152,7 +152,7 @@ if __name__ == '__main__':
     
 
 
-    a = analysis.Analysis(X_train, X_test, y_train, y_test)
+    a = analysis.Analysis(f)
     score = a.calculate_loop(max_poly_deg, score_list, method_list, data_list)
 
     p = PlotData(score)

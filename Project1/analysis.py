@@ -27,10 +27,11 @@ def relative_errror(y_data, y_model):
 
 @dataclass(frozen=True)
 class Analysis: 
-    X_train: np.ndarray
-    X_test: np.ndarray
-    y_train: np.ndarray
-    y_test: np.ndarray
+    franke_object: franke_data.FrankeData
+    # X_train: np.ndarray
+    # X_test: np.ndarray
+    # y_train: np.ndarray
+    # y_test: np.ndarray
 
 
     def calculate_loop(self, max_poly_deg:int, score_list = None, method_list = None, data_list = None ):
@@ -70,7 +71,7 @@ class Analysis:
         # Slice desing matrix dependent og polynomal degree. 
         l = int(((deg+1)*(deg+2)/2))		# Number of elements in beta
 
-        if l > np.shape(self.X_test)[1]: 
+        if l > np.shape(self.franke_object.get_X_test())[1]: 
             raise ValueError("""Polynomail degree = {deg} requires {l} features in desing matrix, 
                     has l = {l}. Increse coloumns in desing matrix
                     """)
@@ -79,21 +80,23 @@ class Analysis:
         score_dict = dict()
         for score in score_list: 
             if score == 'mse':
-                score_dict['mse'] = self.__get_mse(l, method_list, data_list)
+                score_dict['mse'] = self.__get_mse(deg, method_list, data_list)
             
             if score == 'r2': 
-                score_dict['r2'] = self.__get_r2(l, method_list, data_list)
+                score_dict['r2'] = self.__get_r2(deg, method_list, data_list)
 
             if score == 'beta':
-                score_dict['beta'] = self.__get_beta(l, method_list, data_list)
+                score_dict['beta'] = self.__get_beta(deg, method_list)
 
         return score_dict
 
 
-    def __get_mse(self, l, method_list, data_list): 
-        X_train_deg = self.X_train[:,:l]       # Slice matrix -> reduce poly deg
-        X_test_deg  = self.X_test[:,:l]
-        o = ols.OLS(X_train_deg, self.y_train)
+    def __get_mse(self, deg, method_list, data_list): 
+        X_train_deg = self.franke_object.get_X_train(deg)
+        X_test_deg = self.franke_object.get_X_test(deg)
+        y_train = self.franke_object.get_y_train()
+        y_test = self.franke_object.get_y_test()
+        o = ols.OLS(X_train_deg, y_train)
 
         # Return values 
         mse_ols = dict()
@@ -104,28 +107,30 @@ class Analysis:
                 o.ols()
                 if data == 'train':
                     y_model= o.predict(X_train_deg)
-                    mse_ols['ols_own_train'] = mse(self.y_train, y_model)
+                    mse_ols['ols_own_train'] = mse(y_train, y_model)
 
                 elif data == 'test': 
                     y_model = o.predict(X_test_deg)
-                    mse_ols['ols_own_test'] = mse(self.y_test, y_model)
+                    mse_ols['ols_own_test'] = mse(y_test, y_model)
 
             elif method == 'ols_skl': 
                 o.skl_ols()
                 if data == 'train':
                     y_model = o.predict(X_train_deg)
-                    mse_ols['ols_skl_train'] = mse(self.y_train, y_model)
+                    mse_ols['ols_skl_train'] = mse(y_train, y_model)
 
                 elif data == 'test': 
                     y_model = o.predict(X_test_deg)
-                    mse_ols['ols_skl_test'] = mse(self.y_test, y_model)
+                    mse_ols['ols_skl_test'] = mse(y_test, y_model)
 
         return mse_ols
 
-    def __get_r2(self, l, method_list, data_list): 
-        X_train_deg = self.X_train[:,:l]       # Slice matrix -> reduce poly deg
-        X_test_deg  = self.X_test[:,:l]
-        o = ols.OLS(X_train_deg, self.y_train)
+    def __get_r2(self, deg, method_list, data_list): 
+        X_train_deg = self.franke_object.get_X_train(deg)
+        X_test_deg = self.franke_object.get_X_test(deg)
+        y_train = self.franke_object.get_y_train()
+        y_test = self.franke_object.get_y_test()
+        o = ols.OLS(X_train_deg, y_train)
 
         # Return values 
         r2_ols = dict()
@@ -136,28 +141,28 @@ class Analysis:
                 o.ols()
                 if data == 'train':
                     y_model= o.predict(X_train_deg)
-                    r2_ols['ols_own_train'] = r2(self.y_train, y_model)
+                    r2_ols['ols_own_train'] = r2(y_train, y_model)
 
                 elif data == 'test': 
                     y_model = o.predict(X_test_deg)
-                    r2_ols['ols_own_test'] = r2(self.y_test, y_model)
+                    r2_ols['ols_own_test'] = r2(y_test, y_model)
 
             elif method == 'ols_skl': 
                 o.skl_ols()
                 if data == 'train':
                     y_model = o.predict(X_train_deg)
-                    r2_ols['ols_skl_train'] = r2(self.y_train, y_model)
+                    r2_ols['ols_skl_train'] = r2(y_train, y_model)
 
                 elif data == 'test': 
                     y_model = o.predict(X_test_deg)
-                    r2_ols['ols_skl_test'] = r2(self.y_test, y_model)
+                    r2_ols['ols_skl_test'] = r2(y_test, y_model)
 
         return r2_ols
 
-    def __get_beta(self, l, method_list, data_list): 
-        X_train_deg = self.X_train[:,:l]       # Slice matrix -> reduce poly deg
-        # X_test_deg  = self.X_test[:,:l]
-        o = ols.OLS(X_train_deg, self.y_train)
+    def __get_beta(self, deg, method_list): 
+        X_train_deg = self.franke_object.get_X_train(deg)
+        y_train = self.franke_object.get_y_train()
+        o = ols.OLS(X_train_deg, y_train)
 
         # Return values 
         beta_ols = dict()
@@ -189,7 +194,7 @@ if __name__ == '__main__':
     X_train, X_test, y_train, y_test = f.get_train_test_data() # XXX pass to function call
 
     # XXX: change takes franke object
-    a = Analysis(X_train, X_test, y_train, y_test) 
+    a = Analysis(f) 
 
     method = ['ols_own', 'ols_skl']
     data = ['test', 'test']
