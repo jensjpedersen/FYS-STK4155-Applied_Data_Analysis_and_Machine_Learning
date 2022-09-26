@@ -36,6 +36,11 @@ class FrankeData:
     uniform_data: bool = True
     data_dim: int = 2
     test_size: float = 0.2
+
+    # Set random seeds
+    set_seed: bool = True
+    seed: int = field(init=False, default = 0)
+    rng: np.random.RandomState = field(init=False) # numpy radndom generator
     
 
     x_range: list[int] = field(default_factory = lambda: [0, 1])
@@ -52,10 +57,18 @@ class FrankeData:
     y_test: np.ndarray = field(init=False, repr=False)
 
     def __post_init__(self):
+        self.rng = np.random.RandomState(self.seed)
         self.x, self.y = self.__generate_xy_data(self.uniform_data, self.data_dim)
         self.z = self.__franke_funciton(self.x, self.y, self.add_noise)
         self.X = self.__design_matrix(self.x, self.y, self.n)
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.z, test_size=self.test_size)
+
+        if self.set_seed:
+            self.X_train, self.X_test, self.y_train, self.y_test = \
+                    train_test_split(self.X, self.z, test_size=self.test_size, random_state=self.seed)
+        else: 
+            self.X_train, self.X_test, self.y_train, self.y_test = \
+                    train_test_split(self.X, self.z, test_size=self.test_size)
+
 
     def get_train_test_data(self):
         """ returns tuple: (X_train, X_test, y_train, y_test) """
@@ -152,7 +165,10 @@ class FrankeData:
 
 
     def __generate_xy_data(self, uniform: bool, dim: int):
-        if uniform: 
+        if uniform and self.set_seed: 
+            x = np.sort(self.rng.uniform(self.x_range[0], self.x_range[1], self.N))
+            y = np.sort(self.rng.uniform(self.x_range[0], self.x_range[1], self.N))
+        elif uniform and not self.set_seed: 
             x = np.sort(np.random.uniform(self.x_range[0], self.x_range[1], self.N))
             y = np.sort(np.random.uniform(self.x_range[0], self.x_range[1], self.N))
         else:
@@ -179,7 +195,11 @@ class FrankeData:
         term3 = 0.5*np.exp(-(9*x-7)**2/4.0 - 0.25*((9*y-3)**2))
         term4 = -0.2*np.exp(-(9*x-4)**2 - (9*y-7)**2)
 
-        if add_noise > 0: 
+        if add_noise > 0 and self.set_seed: 
+            noise = add_noise*self.rng.normal(0, 1, np.shape(x))
+            return term1 + term2 + term3 + term4 + noise
+
+        elif add_noise > 0 and not self.set_seed:
             noise = add_noise*np.random.normal(0, 1, np.shape(x))
             return term1 + term2 + term3 + term4 + noise
 
@@ -213,10 +233,11 @@ class FrankeData:
 if __name__ == '__main__':
     tic = time.perf_counter()
 
-    f = FrankeData(n=6, N=1000, add_noise = False, data_dim = 2)
+    f = FrankeData(n=6, N=1000, add_noise = False, data_dim = 2, set_seed=True)
     toc = time.perf_counter()
     print(f'took: {toc-tic}s')
     X_train, X_test, y_train, y_test = f.get_train_test_data()
+    print(np.max(y_test))
 
     f.plot()
 
