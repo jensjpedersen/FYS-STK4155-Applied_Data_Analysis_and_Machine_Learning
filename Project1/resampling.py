@@ -22,6 +22,30 @@ importlib.reload(plot_data)
 class ResamplingAnalysis: 
     franke_object: franke_data.FrankeData
 
+
+    def boots_lamb_loop(self, regression_methods: list, n_resamples:int, resample_dataset, lambda_list: list):
+        keys = ['lamb:'+str(l) for l in lambda_list]
+        boots_lamb_scores = {key: {} for key in keys}
+
+        y_test = self.franke_object.get_y_test()
+        max_poly_deg = self.franke_object.n
+        
+        for lamb in lambda_list: 
+            for deg in range(1, max_poly_deg + 1): 
+                boots_lamb_scores[f'lamb:{str(lamb)}'][str(deg)] = {'mse': {}}
+                for method in regression_methods: 
+                    re = Resampling(self.franke_object, poly_deg = deg, lamb = lamb)
+                    y_boots_pred = re.bootstrap(n_resamples, method, resample_dataset)
+                    rs = ResamplingScores(y_test, y_boots_pred)
+                    boots_lamb_scores[f'lamb:{str(lamb)}'][str(deg)]['mse'][method] = rs.mse()
+
+        return boots_lamb_scores
+
+        
+
+
+
+
     def kfold_loop(self, regression_methods: list, n_splits: int, dataset: str, lamb: float): 
         """
         Parameters:
@@ -371,18 +395,30 @@ if __name__ == '__main__':
     # XXX: does not look good
     # Debug: plot mse for each y_pred_kfold, y_test_kfold
 
-    regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
-    regression_methods = ['ridge_own', 'ols_own']
-    score_list = ['mse']
-    kfold_scores = ra.kfold_loop(regression_methods = regression_methods, n_splits=5, dataset='train', lamb = 0.001)
-    plot_bias_variance_tradeoff(kfold_scores, score_list=score_list)
 
+
+
+    # =============== Kfold ===============
+    # regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
+    # regression_methods = ['ridge_own', 'ols_own']
+    # kfold_scores = ra.kfold_loop(regression_methods = regression_methods, n_splits=5, dataset='train', lamb = 0.001)
+    # score_list = ['mse']
+    # plot_bias_variance_tradeoff(kfold_scores, score_list=score_list)
+
+    # =============== Boots ===============
     # regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
     # regression_methods = ['lasso_skl', 'ols_own']
     # score_list = ['mse']
     # boots_scores = ra.bootstrap_loop(regression_methods = regression_methods, n_resamples = 20, resample_dataset='train', lamb = 0.0001)
     # plot_bias_variance_tradeoff(boots_scores, score_list=score_list)
 
+    # =============== Boots lambdas ===============
+    lambda_list = np.logspace(-3, 3, 7)
+
+    regression_methods = ['ridge_own', 'ridge_skl']
+    lamb_scores = ra.boots_lamb_loop(regression_methods, n_resamples = 20, resample_dataset='train', lambda_list = lambda_list)
+    
+    
 
 
 
