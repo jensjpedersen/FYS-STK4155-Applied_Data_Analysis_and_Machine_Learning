@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 import sys
 import sklearn as skl
 import importlib
+import seaborn as sns
 import franke_data
 import plot_data
 import ols 
@@ -30,7 +31,7 @@ class ResamplingAnalysis:
     franke_object: franke_data.FrankeData
 
 
-    def boots_lamb_loop(self, regression_methods: list, n_resamples:int, resample_dataset, lambda_list: list):
+    def boots_lamb_loop(self, regression_methods: list, n_resamples:int, resample_dataset, predict_dataset: str, lambda_list: list):
         keys = ['lamb:'+str(l) for l in lambda_list]
         boots_lamb_scores = {key: {} for key in keys}
 
@@ -42,7 +43,7 @@ class ResamplingAnalysis:
                 boots_lamb_scores[f'lamb:{str(lamb)}'][str(deg)] = {'mse': {}}
                 for method in regression_methods: 
                     re = Resampling(self.franke_object, poly_deg = deg, lamb = lamb)
-                    y_boots_pred = re.bootstrap(n_resamples, method, resample_dataset)
+                    y_boots_pred = re.bootstrap(n_resamples, method, resample_dataset, predict_dataset)
                     rs = ResamplingScores(y_test, y_boots_pred)
                     boots_lamb_scores[f'lamb:{str(lamb)}'][str(deg)]['mse'][method] = rs.mse()
 
@@ -76,7 +77,7 @@ class ResamplingAnalysis:
         
         for deg in range(1, max_poly_deg + 1): 
             # kfold_scores[str(deg)] = {'mse': {}, 'bias': {}, 'variance': {}}
-            kfold_scores[str(deg)] = {'mse': {}}
+            kfold_scores[str(deg)] = {'mse': {}, 'mse_skl': {}}
 
             re = Resampling(self.franke_object, poly_deg = deg, lamb=lamb)
 
@@ -86,9 +87,9 @@ class ResamplingAnalysis:
                 # mse = re.kfold_own(n_splits=n_splits, dataset=dataset, regression_method=method)
                 # kfold_scores[str(deg)]['mse'][str(method)] = mse
 
-                # kfold_scores[str(deg)]['mse'][str(method)] = re.kfold_skl(n_splits, method, dataset) # XXX: test
+                kfold_scores[str(deg)]['mse'][str(method)] = re.kfold_skl(n_splits, method, dataset) # XXX: test
 
-                kfold_scores[str(deg)]['mse'][str(method)] = re.kfold_own(n_splits, method, dataset)
+                # kfold_scores[str(deg)]['mse'][str(method)] = re.kfold_own(n_splits, method, dataset)
 
 
         return kfold_scores
@@ -401,6 +402,55 @@ def plot_bias_variance_tradeoff(scores, score_list: None, title: str = None, fil
     plt.legend()
     plt.xlabel('Polynomial degree')
     plt.show()
+
+def plot_heatmap(scores: dict, score_list: list, reg_method: str, title: str = None): 
+    """ 
+    Parameters:
+        reg_method_list: [ridge_own, ols_own, ...] - Must correspond to key in scores dict
+        score_list: [mse, bias, ... ] - Must correspond to key in scores dict
+    """
+
+    # get lambda
+    lambdas_keys = list(scores.keys())
+    lambdas = [ float(lamb.replace('lamb:','')) for lamb in lambdas_keys ]
+    poly_deg_keys = list(scores[lambdas_keys[0]])
+    poly_deg = [ int(deg) for deg in poly_deg_keys ]
+
+    for score_ in score_list:
+        M = np.zeros((len(lambdas), len(poly_deg)))
+        for j, lamb in enumerate(lambdas_keys): 
+            for i, deg in enumerate(poly_deg_keys):
+                M[j,i] = scores[lamb][deg][score_][reg_method]
+
+
+        plt.figure(figsize=(12,8))
+        M_min = np.min(M)
+        M_max = np.max(M)
+        vmin = M_min
+        vmax = M_min + (M_max - M_min)/3
+        # vmax = 0.03
+        sns.heatmap(M, annot=True,
+                vmax = vmax, 
+                cbar_kws={'label': score_.upper()}, 
+                xticklabels = [str(deg) for deg in poly_deg],
+                yticklabels=[str(lamb) for lamb in lambdas]) 
+
+        if title != None: 
+            plt.title(title)
+
+        plt.xlabel('Polynomial degree')
+        plt.ylabel(r'$\lambda$')
+        plt.show()
+
+
+
+
+
+    
+
+
+
+
             
 
 
@@ -414,7 +464,7 @@ if __name__ == '__main__':
     # N = 100 # dataset size
     # noise = 1
 
-    np.random.seed(1)
+    # np.random.seed(1)
 
     # np.random.seed(0)
     max_poly_deg = 12
@@ -429,12 +479,16 @@ if __name__ == '__main__':
     f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = data_dim, add_noise = noise, test_size = test_size, set_seed=True)
     ra = ResamplingAnalysis(f)
 
-    # =============== Kfold ===============
-    regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
-    regression_methods = ['ridge_own', 'ols_own', 'ridge_skl']
-    kfold_scores = ra.kfold_loop(regression_methods = regression_methods, n_splits=5, dataset='data', lamb = 0.001)
-    score_list = ['mse']
-    plot_bias_variance_tradeoff(kfold_scores, score_list=score_list)
+    # # =============== Kfold ===============
+    # regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
+    # regression_methods = ['ridge_own', 'ols_own', 'ridge_skl']
+    # regression_methods = ['ols_own']
+    # n_splits = 10
+    # kfold_scores = ra.kfold_loop(regression_methods = regression_methods, n_splits=n_splits, dataset='data', lamb = 0.001)
+    # # score_list = ['mse', 'mse_skl']
+    # score_list = ['mse']
+    # # plot_bias_variance_tradeoff(kfold_scores, score_list=score_list, title = f'kfold cross validation with n = {n_splits} splits')
+    # plot_bias_variance_tradeoff(kfold_scores, score_list=score_list, title = f'Kfold cross validation with n = {n_splits} splits')
 
     # # =============== Boots ===============
     # regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
@@ -449,9 +503,12 @@ if __name__ == '__main__':
 
     # TODO: add possibility to predict on trian data
     # =============== Boots lambdas ===============
-    # lambda_list = np.logspace(-3, 3, 7)
+    lambda_list = np.logspace(-6, 1, 8)
+    n_resamples = 100
     # regression_methods = ['ridge_own', 'ridge_skl']
-    # lamb_scores = ra.boots_lamb_loop(regression_methods, n_resamples = 20, resample_dataset='train', lambda_list = lambda_list)
+    # lamb_scores = ra.boots_lamb_loop(regression_methods, n_resamples = n_resamples, resample_dataset='train', predict_dataset='test', lambda_list = lambda_list)
+    score_list = ['mse']
+    plot_heatmap(lamb_scores, score_list = score_list, reg_method = 'ridge_own', title=f'Ridge regression with n_boots = {n_resamples}')
     
     
 
