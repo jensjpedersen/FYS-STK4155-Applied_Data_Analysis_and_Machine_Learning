@@ -66,7 +66,7 @@ class ResamplingAnalysis:
 
         max_poly_deg = self.franke_object.n
 
-        y_test = self.franke_object.get_y_test()
+        # y_test = self.franke_object.get_y_test()
 
         # # Get datset 
         # get_func_name = f'get_{dataset}'
@@ -86,7 +86,10 @@ class ResamplingAnalysis:
                 # mse = re.kfold_own(n_splits=n_splits, dataset=dataset, regression_method=method)
                 # kfold_scores[str(deg)]['mse'][str(method)] = mse
 
-                kfold_scores[str(deg)]['mse'][str(method)] = re.kfold_skl(n_splits, method, dataset) # XXX: test
+                # kfold_scores[str(deg)]['mse'][str(method)] = re.kfold_skl(n_splits, method, dataset) # XXX: test
+
+                kfold_scores[str(deg)]['mse'][str(method)] = re.kfold_own(n_splits, method, dataset)
+
 
         return kfold_scores
 
@@ -192,6 +195,7 @@ class Resampling:
 
 
     def kfold_own(self, n_splits: int, regression_method:str, dataset: str): 
+
         """
         Parameters:
             Dataset (str) - data used for kfold splitting. datset is devided in n_splits,
@@ -209,17 +213,17 @@ class Resampling:
 
         n_data = len(y_data)
         n_test_data = int(np.ceil(len(y_data)/n_splits))
-        y_pred_kfold = np.zeros((n_test_data, n_splits))
-        y_test_kfold = np.zeros((n_test_data, n_splits))
+        # y_pred_kfold = np.zeros((n_test_data, n_splits))
+        # y_test_kfold = np.zeros((n_test_data, n_splits))
         # y_pred_kfold_test = np.zeros((n_test_data, n_splits))
-        idx = np.arange(n_data)
-        shuffle_idx = np.ones(n_data) 
+        idx_shuffled = np.arange(n_data)
+        np.random.shuffle(idx_shuffled)
+
+
+        mse_kfold_deg = []
         for i in range(n_splits): 
-            old_shuf_idx = shuffle_idx
-            shuffle_idx = np.random.choice(idx, size=n_data, replace=False)
-            assert((old_shuf_idx != shuffle_idx).any())
-            test_idx = list(shuffle_idx[:n_test_data])
-            train_idx = list(shuffle_idx[n_test_data:])
+            test_idx = idx_shuffled[n_test_data*i:n_test_data*(i+1)]
+            train_idx = np.delete(idx_shuffled, np.s_[n_test_data*i:n_test_data*(i+1)])
 
             X_kfold_train = X_data[train_idx,:]
             y_kfold_train = y_data[train_idx]
@@ -230,17 +234,17 @@ class Resampling:
             # y_pred_kfold[:,i] = self.regression_method(regression_method, X_kfold_train, y_kfold_train, X_kfold_test)
 
             # # XXX test  Fix
-            o = ols.OLS(X_kfold_train, y_kfold_train)
-            o.ols()
-            y_kfold_pred = o.predict(X_kfold_test)
 
-            # mse = np.mean( np.mean((y_kfold_test[:,np.newaxis] - y_kfold_pred[:,np.newaxis])**2, axis=1, keepdims=True) )
+    # def regression_method(self, method, X_train, y_train, X_test, lamb):
+            
+
+            y_kfold_pred = self.regression_method(regression_method, X_kfold_train, y_kfold_train, X_kfold_test, lamb = self.lamb)
             mse = np.mean((y_kfold_test[:,np.newaxis] - y_kfold_pred[:,np.newaxis])**2) 
             mse_kfold_deg.append(mse)
 
-            # return mse
-
         return np.mean(mse_kfold_deg)
+
+        # return np.mean(mse_kfold_deg)
 
 
 
@@ -261,8 +265,8 @@ class Resampling:
 
         kfold = skl.model_selection.KFold(n_splits = n_splits)
 
-        n_test_data = int(np.ceil(len(y_data)/n_splits))
-        y_pred_kfold_test = np.zeros((n_test_data, n_splits))
+        # n_test_data = int(np.ceil(len(y_data)/n_splits))
+        # y_pred_kfold_test = np.zeros((n_test_data, n_splits))
         i = 0
         mse_kfold_deg = []
         for train_idx, test_idx in kfold.split(y_data): 
@@ -427,8 +431,8 @@ if __name__ == '__main__':
 
     # =============== Kfold ===============
     regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
-    regression_methods = ['ridge_own', 'ols_own']
-    kfold_scores = ra.kfold_loop(regression_methods = regression_methods, n_splits=10, dataset='train', lamb = 0.001)
+    regression_methods = ['ridge_own', 'ols_own', 'ridge_skl']
+    kfold_scores = ra.kfold_loop(regression_methods = regression_methods, n_splits=5, dataset='data', lamb = 0.001)
     score_list = ['mse']
     plot_bias_variance_tradeoff(kfold_scores, score_list=score_list)
 
