@@ -7,6 +7,7 @@ import importlib
 import franke_data
 import plot_data
 import ols 
+import logging
 import lasso_regression
 import ridge_regression
 import analysis 
@@ -17,6 +18,12 @@ importlib.reload(ridge_regression)
 importlib.reload(analysis)
 importlib.reload(plot_data)
 
+
+
+
+numba_logger = logging.getLogger('numba')
+numba_logger.setLevel(logging.WARNING)
+logging.basicConfig(filename='debug.log', encoding='utf-8', level=logging.DEBUG, force=True)
 
 @dataclass(frozen=True) 
 class ResamplingAnalysis: 
@@ -85,7 +92,7 @@ class ResamplingAnalysis:
 
 
 
-    def bootstrap_loop(self, regression_methods: list, n_resamples:int, resample_dataset, lamb: float):
+    def bootstrap_loop(self, regression_methods: list, n_resamples:int, resample_dataset, predict_dataset, lamb: float):
         """ Loops through polynoamil degree and caculates scores (mse, bias, variance) 
         Parameters:
             regression_methods (list): list of regression methods to predict scores from
@@ -95,9 +102,15 @@ class ResamplingAnalysis:
                                     Satistics is always predicted on the test data defined in franke_object. 
         Returns:
             resampling_scores: dict with scores """
+        logging.info(self.bootstrap_loop)
 
-        y_test = self.franke_object.get_y_test()
+        # XXX: add parameter predict_dataset
+        # y_test = self.franke_object.get_y_test()
         max_poly_deg = self.franke_object.n
+
+        get_test_data = f'get_y_{predict_dataset}'
+        get_test_data = getattr(self.franke_object, get_test_data)
+        y_test = get_test_data()
 
         resampling_scores = dict()
         # resampling_scores = {'mse': {}, 'bias': {}, 'variance': {}}
@@ -118,12 +131,18 @@ class ResamplingAnalysis:
 
             for method in regression_methods: 
                 re = Resampling(self.franke_object, poly_deg = deg, lamb = lamb)
-                y_boots_pred = re.bootstrap(n_resamples, method, resample_dataset)
+                # TODO: pred on test and train
+                
+                y_boots_pred = re.bootstrap(n_resamples, method, resample_dataset, predict_dataset)
                 # XXX: arg poly_deg
                 rs = ResamplingScores(y_test, y_boots_pred)
-                resampling_scores[str(deg)]['mse'][str(method)] = rs.mse()
-                resampling_scores[str(deg)]['bias'][str(method)] = rs.bias()
-                resampling_scores[str(deg)]['variance'][str(method)] = rs.variance() 
+                # resampling_scores[str(deg)]['mse'][str(method)] = rs.mse()
+                # resampling_scores[str(deg)]['bias'][str(method)] = rs.bias()
+                # resampling_scores[str(deg)]['variance'][str(method)] = rs.variance() 
+
+                resampling_scores[str(deg)]['mse'][f'{method}_{predict_dataset}'] = rs.mse()
+                resampling_scores[str(deg)]['bias'][f'{method}_{predict_dataset}'] = rs.bias()
+                resampling_scores[str(deg)]['variance'][f'{method}_{predict_dataset}'] = rs.variance() 
 
         return resampling_scores
 
@@ -227,7 +246,7 @@ class Resampling:
 
         # print(self.poly_deg)
         # print(np.mean(mse_test))
-        return y_test_kfold, y_pred_kfold
+        # return y_test_kfold, y_pred_kfold
 
     def kfold_skl(self, n_splits: int, regression_method: str, dataset: str):
         """ Parameters:
@@ -269,7 +288,7 @@ class Resampling:
 
         return np.mean(mse_kfold_deg)
 
-    def bootstrap(self, n_resamples: int, method: str, resample_dataset:str) -> np.ndarray:
+    def bootstrap(self, n_resamples: int, method: str, resample_dataset:str, predict_dataset: str) -> np.ndarray:
         """
         Parameters:
             n_resamples: Number of resmaples
@@ -279,19 +298,43 @@ class Resampling:
         Returns:
             y-pred: Matrix with predicted values of size:(n_test_data, n_resamples)
         """
-        # Define trianing and test data
-        X_test = self.franke_object.get_X_test(deg=self.poly_deg)
 
+
+        logging.info(f"""method:Resampling.bootstrap
+        Parameters:
+            n_resamples: {n_resamples}
+            method: {method}
+            resample_dataset: {resample_dataset}
+            predict_dataset: {predict_dataset}
+        """)
+        # Get test data
+        # X_test = self.franke_object.get_X_test(deg=self.poly_deg)
+        get_test_data = f'get_X_{predict_dataset}'
+        get_test_data = getattr(self.franke_object, get_test_data)
+        X_test = get_test_data(deg = self.poly_deg)
+
+        logging.info(f"""get_test_data: {get_test_data} 
+        poly_deg = {self.poly_deg} 
+        X_test shape: {np.shape(X_test)}""")
+
+        # Get training data
         get_func_name = f'get_{resample_dataset}'
         get_data = getattr(self.franke_object, get_func_name)
         X_resample, y_resample = get_data(deg=self.poly_deg) # Datset to resample
+
+        logging.info(f"""get_train_data: {get_data} 
+        poly_deg = {self.poly_deg}
+        X_resample shape: {np.shape(X_resample)}
+        y_resample shape: {np.shape(y_resample)}""")
 
         y_pred = np.zeros((np.shape(X_test)[0], n_resamples))
 
         for i in range(n_resamples):
             X_, y_ = skl.utils.resample(X_resample, y_resample)
+            assert(np.shape(y_) == np.shape(y_resample))
             y_pred[:,i] = self.regression_method(method, X_, y_, X_test, lamb = self.lamb)
 
+        logging.info(f' y_pred shape: {np.shape(y_pred)}')
         return y_pred
 
     def regression_method(self, method, X_train, y_train, X_test, lamb):
@@ -300,7 +343,7 @@ class Resampling:
             method (str): regression_method = ols_own, ols_skl, ridge_own, ridge_skl, lasso_skl 
         """
         assert(len(X_train) == len(y_train))
-        assert(len(X_train) > len(X_test))
+        assert(len(X_train) >= len(X_test))
         X_ = X_train
         y_ = y_train
 
@@ -332,7 +375,7 @@ class Resampling:
 
 
 
-def plot_bias_variance_tradeoff(scores, score_list: None): 
+def plot_bias_variance_tradeoff(scores, score_list: None, title: str = None, filename: str = None): 
     """ Plots scores from scores dict in same plot"""
     # Get dict info
     poly_deg = np.array([ int(i) for i in scores ])
@@ -342,12 +385,15 @@ def plot_bias_variance_tradeoff(scores, score_list: None):
     if score_list == None:
         raise ValueError("Spesify list with scors: eg. score_list = ['mse', 'bias', 'variance']")
     # Plot mse, bias and variance.  
+
+    plt.figure(figsize = (12,8))
     for method in method_names: 
         for score in score_list: 
             vals = np.array([ scores[str(deg)][score][method] for deg in poly_deg ])
             plt.plot(poly_deg, vals, label = f'{score} from {method}')
 
 
+    plt.title(title)
     plt.legend()
     plt.xlabel('Polynomial degree')
     plt.show()
@@ -357,66 +403,51 @@ def plot_bias_variance_tradeoff(scores, score_list: None):
 
 if __name__ == '__main__': 
 
+    # logging.basicConfig(filename='debug.log')
+
     # n = 12   # Poly deg
     # n = 8   # Poly deg
     # N = 100 # dataset size
     # noise = 1
 
+    np.random.seed(1)
 
     # np.random.seed(0)
     max_poly_deg = 12
     # max_poly_deg = 8
-    n_data = 50
+    n_data = 20
     # n_data = 50
     test_size = 0.2
-    noise = 0.5
+    noise = 0.2
+    # noise = 0
     data_dim = 2
 
-    n_resamples = 50
-
-
     f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = data_dim, add_noise = noise, test_size = test_size, set_seed=True)
-
-    X_train, X_test, y_train, y_test = f.get_train_test_data()
-
-
-    # max_poly_deg = n
-    methods = ['ols_own']
-    methods = ['ols_skl']
-    methods = ['ols_own', 'ols_skl']
-
-    # XXX conitnue plot ordinary scores 
-    # a = analysis.Analysis(f)
-    # score = a.calculate_loop(max_poly_deg, ['mse'], ['ols_skl', 'ols_own'], ['test', 'test'])
-    # p = plot_data.PlotData(score)
-    # p.plot_mse()
-
     ra = ResamplingAnalysis(f)
-    # XXX: does not look good
-    # Debug: plot mse for each y_pred_kfold, y_test_kfold
-
-
-
 
     # =============== Kfold ===============
-    # regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
-    # regression_methods = ['ridge_own', 'ols_own']
-    # kfold_scores = ra.kfold_loop(regression_methods = regression_methods, n_splits=5, dataset='train', lamb = 0.001)
-    # score_list = ['mse']
-    # plot_bias_variance_tradeoff(kfold_scores, score_list=score_list)
+    regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
+    regression_methods = ['ridge_own', 'ols_own']
+    kfold_scores = ra.kfold_loop(regression_methods = regression_methods, n_splits=10, dataset='train', lamb = 0.001)
+    score_list = ['mse']
+    plot_bias_variance_tradeoff(kfold_scores, score_list=score_list)
 
-    # =============== Boots ===============
+    # # =============== Boots ===============
     # regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
-    # regression_methods = ['lasso_skl', 'ols_own']
-    # score_list = ['mse']
-    # boots_scores = ra.bootstrap_loop(regression_methods = regression_methods, n_resamples = 20, resample_dataset='train', lamb = 0.0001)
-    # plot_bias_variance_tradeoff(boots_scores, score_list=score_list)
+    # regression_methods = ['ols_own']
+    # score_list = ['mse', 'bias', 'variance']
+    # n_resamples = 100
+    # boots_scores = ra.bootstrap_loop(regression_methods = regression_methods,
+    #         n_resamples = n_resamples, resample_dataset='train', lamb = 0.0001, predict_dataset='train')
+    # plot_bias_variance_tradeoff(boots_scores, score_list=score_list, 
+    #         title = f'Bootstrap with n resamples = {n_resamples} and n datapoints = {n_data*n_data}')
 
+
+    # TODO: add possibility to predict on trian data
     # =============== Boots lambdas ===============
-    lambda_list = np.logspace(-3, 3, 7)
-
-    regression_methods = ['ridge_own', 'ridge_skl']
-    lamb_scores = ra.boots_lamb_loop(regression_methods, n_resamples = 20, resample_dataset='train', lambda_list = lambda_list)
+    # lambda_list = np.logspace(-3, 3, 7)
+    # regression_methods = ['ridge_own', 'ridge_skl']
+    # lamb_scores = ra.boots_lamb_loop(regression_methods, n_resamples = 20, resample_dataset='train', lambda_list = lambda_list)
     
     
 
