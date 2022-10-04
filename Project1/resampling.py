@@ -13,6 +13,7 @@ import logging
 import lasso_regression
 import ridge_regression
 import analysis 
+import terrain_data
 importlib.reload(franke_data)
 importlib.reload(ols)
 importlib.reload(lasso_regression)
@@ -29,21 +30,21 @@ logging.basicConfig(filename='debug.log', encoding='utf-8', level=logging.DEBUG,
 
 @dataclass(frozen=True) 
 class ResamplingAnalysis: 
-    franke_object: franke_data.FrankeData
+    data_object: franke_data.FrankeData | terrain_data.TerrainData
 
 
     def boots_lamb_loop(self, regression_methods: list, n_resamples:int, resample_dataset, predict_dataset: str, lambda_list: list):
         keys = ['lamb:'+str(l) for l in lambda_list]
         boots_lamb_scores = {key: {} for key in keys}
 
-        y_test = self.franke_object.get_y_test()
-        max_poly_deg = self.franke_object.n
+        y_test = self.data_object.get_y_test()
+        max_poly_deg = self.data_object.n
         
         for lamb in lambda_list: 
             for deg in range(1, max_poly_deg + 1): 
                 boots_lamb_scores[f'lamb:{str(lamb)}'][str(deg)] = {'mse': {}}
                 for method in regression_methods: 
-                    re = Resampling(self.franke_object, poly_deg = deg, lamb = lamb)
+                    re = Resampling(self.data_object, poly_deg = deg, lamb = lamb)
                     y_boots_pred = re.bootstrap(n_resamples, method, resample_dataset, predict_dataset)
                     rs = ResamplingScores(y_test, y_boots_pred)
                     boots_lamb_scores[f'lamb:{str(lamb)}'][str(deg)]['mse'][method] = rs.mse()
@@ -54,14 +55,14 @@ class ResamplingAnalysis:
         keys = ['lamb:'+str(l) for l in lambda_list]
         kfold_lamb_scores = {key: {} for key in keys}
 
-        y_test = self.franke_object.get_y_test()
-        max_poly_deg = self.franke_object.n
+        y_test = self.data_object.get_y_test()
+        max_poly_deg = self.data_object.n
         
         for lamb in lambda_list: 
             for deg in range(1, max_poly_deg + 1): 
                 kfold_lamb_scores[f'lamb:{str(lamb)}'][str(deg)] = {'mse': {}}
                 for method in regression_methods: 
-                    re = Resampling(self.franke_object, poly_deg = deg, lamb = lamb)
+                    re = Resampling(self.data_object, poly_deg = deg, lamb = lamb)
                     mse = re.kfold_skl(n_splits, method, dataset) # FIXME: skl kfold
                     kfold_lamb_scores[f'lamb:{str(lamb)}'][str(deg)]['mse'][method] = mse
 
@@ -83,13 +84,13 @@ class ResamplingAnalysis:
 
         kfold_scores = dict()
 
-        max_poly_deg = self.franke_object.n
+        max_poly_deg = self.data_object.n
 
-        # y_test = self.franke_object.get_y_test()
+        # y_test = self.data_object.get_y_test()
 
         # # Get datset 
         # get_func_name = f'get_{dataset}'
-        # get_data = getattr(self.franke_object, get_func_name)
+        # get_data = getattr(self.data_object, get_func_name)
         # X_data, y_data = get_data(deg = self.poly_deg)
         # XXX: not here need deg
         
@@ -97,7 +98,7 @@ class ResamplingAnalysis:
             # kfold_scores[str(deg)] = {'mse': {}, 'bias': {}, 'variance': {}}
             kfold_scores[str(deg)] = {'mse': {}, 'mse_skl': {}}
 
-            re = Resampling(self.franke_object, poly_deg = deg, lamb=lamb)
+            re = Resampling(self.data_object, poly_deg = deg, lamb=lamb)
 
             for method in regression_methods:
                 # y_kfold_test, y_kfold_pred = re.kfold_own(n_splits=n_splits, dataset=dataset, regression_method=method)
@@ -121,17 +122,17 @@ class ResamplingAnalysis:
             n_resamples: 
             resample_dataset (str): Chosses dataset to draw samples from. 
                                     Values: 'test', 'train', 'validation' (not implemented). 
-                                    Satistics is always predicted on the test data defined in franke_object. 
+                                    Satistics is always predicted on the test data defined in data_object. 
         Returns:
             resampling_scores: dict with scores """
         logging.info(self.bootstrap_loop)
 
         # XXX: add parameter predict_dataset
-        # y_test = self.franke_object.get_y_test()
-        max_poly_deg = self.franke_object.n
+        # y_test = self.data_object.get_y_test()
+        max_poly_deg = self.data_object.n
 
         get_test_data = f'get_y_{predict_dataset}'
-        get_test_data = getattr(self.franke_object, get_test_data)
+        get_test_data = getattr(self.data_object, get_test_data)
         y_test = get_test_data()
 
         resampling_scores = dict()
@@ -152,7 +153,7 @@ class ResamplingAnalysis:
             # r = Resampling(_X_train, _X_test, self.y_train)
 
             for method in regression_methods: 
-                re = Resampling(self.franke_object, poly_deg = deg, lamb = lamb)
+                re = Resampling(self.data_object, poly_deg = deg, lamb = lamb)
                 # TODO: pred on test and train
                 
                 y_boots_pred = re.bootstrap(n_resamples, method, resample_dataset, predict_dataset)
@@ -209,11 +210,11 @@ class ResamplingScores:
 @dataclass(frozen=True)
 class Resampling: 
     """Parameters:
-        franke_object
+        data_object
         poly_deg (int): Desing matrix is sliced with respect to polynomail degree
         lamb (double): hyper parameter
     """
-    franke_object: franke_data.FrankeData
+    data_object: franke_data.FrankeData | terrain_data.TerrainData
     poly_deg: int 
     lamb: float
 
@@ -232,7 +233,7 @@ class Resampling:
 
         # Get desing matrix
         get_func_name = f'get_{dataset}'
-        get_data = getattr(self.franke_object, get_func_name)
+        get_data = getattr(self.data_object, get_func_name)
         X_data, y_data = get_data(deg = self.poly_deg)
 
         n_data = len(y_data)
@@ -288,7 +289,7 @@ class Resampling:
 
         # Get desing matrix
         get_func_name = f'get_{dataset}'
-        get_data = getattr(self.franke_object, get_func_name)
+        get_data = getattr(self.data_object, get_func_name)
         X_data, y_data = get_data(deg = self.poly_deg)
 
         kfold = skl.model_selection.KFold(n_splits = n_splits)
@@ -340,9 +341,9 @@ class Resampling:
             predict_dataset: {predict_dataset}
         """)
         # Get test data
-        # X_test = self.franke_object.get_X_test(deg=self.poly_deg)
+        # X_test = self.data_object.get_X_test(deg=self.poly_deg)
         get_test_data = f'get_X_{predict_dataset}'
-        get_test_data = getattr(self.franke_object, get_test_data)
+        get_test_data = getattr(self.data_object, get_test_data)
         X_test = get_test_data(deg = self.poly_deg)
 
         logging.info(f"""get_test_data: {get_test_data} 
@@ -351,7 +352,7 @@ class Resampling:
 
         # Get training data
         get_func_name = f'get_{resample_dataset}'
-        get_data = getattr(self.franke_object, get_func_name)
+        get_data = getattr(self.data_object, get_func_name)
         X_resample, y_resample = get_data(deg=self.poly_deg) # Datset to resample
 
         logging.info(f"""get_train_data: {get_data} 
@@ -450,7 +451,6 @@ def plot_heatmap(scores: dict, score_list: list, reg_method: str, title: str = N
                 M[j,i] = scores[lamb][deg][score_][reg_method]
 
 
-        breakpoint() 
         plt.figure(figsize=(20,8))
         M_min = np.min(M)
         M_max = np.max(M)
