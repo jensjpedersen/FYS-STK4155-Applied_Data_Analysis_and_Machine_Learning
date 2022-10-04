@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 import sys
 import sklearn as skl
 import importlib
+import warnings
 import seaborn as sns
 import franke_data
 import plot_data
@@ -48,6 +49,23 @@ class ResamplingAnalysis:
                     boots_lamb_scores[f'lamb:{str(lamb)}'][str(deg)]['mse'][method] = rs.mse()
 
         return boots_lamb_scores
+
+    def kfold_lamb_loop(self, regression_methods: list, n_splits:int, dataset: str, lambda_list: list):
+        keys = ['lamb:'+str(l) for l in lambda_list]
+        kfold_lamb_scores = {key: {} for key in keys}
+
+        y_test = self.franke_object.get_y_test()
+        max_poly_deg = self.franke_object.n
+        
+        for lamb in lambda_list: 
+            for deg in range(1, max_poly_deg + 1): 
+                kfold_lamb_scores[f'lamb:{str(lamb)}'][str(deg)] = {'mse': {}}
+                for method in regression_methods: 
+                    re = Resampling(self.franke_object, poly_deg = deg, lamb = lamb)
+                    mse = re.kfold_skl(n_splits, method, dataset) # FIXME: skl kfold
+                    kfold_lamb_scores[f'lamb:{str(lamb)}'][str(deg)]['mse'][method] = mse
+
+        return kfold_lamb_scores
 
         
 
@@ -254,9 +272,13 @@ class Resampling:
         # return y_test_kfold, y_pred_kfold
 
     def kfold_skl(self, n_splits: int, regression_method: str, dataset: str):
-        """ Parameters:
-                Dataset (str) - data used for kfold splitting. datset is devided in n_splits,
-                                where one fold is used for testing and the others for training. 
+        """ 
+        Parameters:
+            Dataset (str) - data used for kfold splitting. datset is devided in n_splits,
+                            where one fold is used for testing and the others for training. 
+
+        Returns:
+             np.mean(mse_kfold_deg)
         """
 
         # Get desing matrix
@@ -423,13 +445,13 @@ def plot_heatmap(scores: dict, score_list: list, reg_method: str, title: str = N
                 M[j,i] = scores[lamb][deg][score_][reg_method]
 
 
-        plt.figure(figsize=(12,8))
+        plt.figure(figsize=(20,8))
         M_min = np.min(M)
         M_max = np.max(M)
         vmin = M_min
         vmax = M_min + (M_max - M_min)/3
         # vmax = 0.03
-        sns.heatmap(M, annot=True,
+        sns.heatmap(M, annot=True, fmt='.5f',
                 vmax = vmax, 
                 cbar_kws={'label': score_.upper()}, 
                 xticklabels = [str(deg) for deg in poly_deg],
@@ -501,14 +523,51 @@ if __name__ == '__main__':
     #         title = f'Bootstrap with n resamples = {n_resamples} and n datapoints = {n_data*n_data}')
 
 
-    # TODO: add possibility to predict on trian data
-    # =============== Boots lambdas ===============
-    lambda_list = np.logspace(-6, 1, 8)
+    # =============== Resampling parameters ===============
     n_resamples = 100
-    # regression_methods = ['ridge_own', 'ridge_skl']
+    lambda_list = np.logspace(-6, 1, 8)
+    n_splits = 10
+
+    # # TODO: add possibility to predict on trian data
+    # # =============== Boots lambdas heatmap ===============
+    # regression_methods = ['ridge_own']
     # lamb_scores = ra.boots_lamb_loop(regression_methods, n_resamples = n_resamples, resample_dataset='train', predict_dataset='test', lambda_list = lambda_list)
-    score_list = ['mse']
-    plot_heatmap(lamb_scores, score_list = score_list, reg_method = 'ridge_own', title=f'Ridge regression with n_boots = {n_resamples}')
+    # score_list = ['mse']
+    # plot_heatmap(lamb_scores, score_list = score_list, reg_method = 'ridge_own', title=f'Ridge regression with n_boots = {n_resamples}')
+
+    # # =============== Ridge best ===============
+    # # Best ridge: lambda = 0.001, poly_deg = 7
+    # lambda_best = 0.001
+
+    # ridge_best_scores = ra.bootstrap_loop(regression_methods = ['ridge_own'],
+    #         n_resamples = n_resamples, resample_dataset='train', predict_dataset='test', lamb = lambda_best)
+
+    # plot_bias_variance_tradeoff(ridge_best_scores, ['mse', 'bias', 'variance'], title=f'Ridge regression with $\lambda$ = {lambda_best}')
+
+
+    # =============== Kfold Rdige lambda ===============
+    # kfold_lamb_scores = ra.kfold_lamb_loop( regression_methods=['ridge_own'], n_splits=n_splits, dataset='data', lambda_list=lambda_list)
+    # plot_heatmap(kfold_lamb_scores, ['mse'], reg_method='ridge_own', title=f'Ridge regression with KFold cross validation, k_folds = {n_splits}')
+
+    # ===============  ===============
+    # Lowest mse for kfold: lambda = 1e-5, deg = 6
+    # kfold_labmda_best = 1e-5
+
+    # =============== Lasso lambdas heaetmap ===============
+    # warnings.filterwarnings('ignore')
+    # lasso_lamb_scores = ra.boots_lamb_loop( ['lasso_skl'], n_resamples, 'train', 'test', lambda_list)
+    # plot_heatmap( lasso_lamb_scores, ['mse'], 'lasso_skl', title=f'Lasso regression with Bootstrap, n_boots = {n_resamples}')
+    
+
+    # =============== Lasso kfold lambdas ===============
+    # warnings.filterwarnings('ignore')
+    # lasso_kfold_lamb_scores = ra.kfold_lamb_loop( regression_methods=['lasso_skl'], n_splits=n_splits, dataset='data', lambda_list=lambda_list)
+    # plot_heatmap(lasso_kfold_lamb_scores, ['mse'], reg_method='lasso_skl', title=f'Lasso regression with KFold cross validation, k_folds = {n_splits}')
+
+    
+    # =============== Summary of best scores, ridge, lasso, mse (kfold, boots) ===============
+    
+    
     
     
 
