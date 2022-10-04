@@ -138,7 +138,7 @@ class ResamplingAnalysis:
         # resampling_scores = {'mse': {}, 'bias': {}, 'variance': {}}
         
         for deg in range(1, max_poly_deg + 1): 
-            resampling_scores[str(deg)] = {'mse': {}, 'bias': {}, 'variance': {}}
+            resampling_scores[str(deg)] = {'mse': {}, 'bias': {}, 'variance': {}, 'r2': {}}
 
             # l = int(((deg+1)*(deg+2)/2))		# Number of elements in beta
             # _X_train = self.X_train[:, :l] 
@@ -165,6 +165,7 @@ class ResamplingAnalysis:
                 resampling_scores[str(deg)]['mse'][f'{method}_{predict_dataset}'] = rs.mse()
                 resampling_scores[str(deg)]['bias'][f'{method}_{predict_dataset}'] = rs.bias()
                 resampling_scores[str(deg)]['variance'][f'{method}_{predict_dataset}'] = rs.variance() 
+                resampling_scores[str(deg)]['r2'][f'{method}_{predict_dataset}'] = rs.r2() 
 
         return resampling_scores
 
@@ -199,6 +200,10 @@ class ResamplingScores:
         # y_test = self.y_test.reshape(np.shape(self.y_pred)[0], 1) # reshape array for subtraction to work 
         mse = np.mean( np.mean((self.y_test - self.y_pred)**2, axis=1, keepdims=True) )
         return mse
+
+    def r2(self):
+        r2 = 1 - np.sum((self.y_test - self.y_pred) ** 2) / np.sum((self.y_test - np.mean(self.y_pred)) ** 2)
+        return r2
 
 
 @dataclass(frozen=True)
@@ -445,6 +450,7 @@ def plot_heatmap(scores: dict, score_list: list, reg_method: str, title: str = N
                 M[j,i] = scores[lamb][deg][score_][reg_method]
 
 
+        breakpoint() 
         plt.figure(figsize=(20,8))
         M_min = np.min(M)
         M_max = np.max(M)
@@ -486,7 +492,7 @@ if __name__ == '__main__':
     # N = 100 # dataset size
     # noise = 1
 
-    # np.random.seed(1)
+    np.random.seed(1)
 
     # np.random.seed(0)
     max_poly_deg = 12
