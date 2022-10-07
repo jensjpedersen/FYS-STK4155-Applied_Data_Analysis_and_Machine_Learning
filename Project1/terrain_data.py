@@ -17,7 +17,8 @@ class TerrainData:
     n: int # max poly deg 
     N: int # datapoints
 
-    terrain_file: str = 'SRTM_data_Norway_1.tif'
+    # terrain_file: str = 'SRTM_data_Norway_1.tif'
+    terrain_file: str = 'Oslo.tif'
 
     test_size: float = 0.2
 
@@ -55,6 +56,7 @@ class TerrainData:
         # Read data
         terrain = imageio.v2.imread(self.terrain_file)
         terrain_slice = terrain[:self.N, :self.N]
+        # terrain_slice = terrain[2500:2500+self.N, :self.N] # XXX used for'SRTM_data_Norway_1.tif'
         return np.ravel(terrain_slice)
 
     def __design_matrix(self, x: np.ndarray, y: np.ndarray, n: int):
@@ -84,18 +86,25 @@ class TerrainData:
 
         # Show the terrain
         terrain = np.reshape(self.z, (self.N, self.N))
-        plt.figure()
-        plt.title('Terrain over Norway 1')
-        plt.imshow(terrain, cmap='gray')
-        plt.xlabel('x')
-        plt.ylabel('y')
+
+        plt.figure(figsize=(10, 10))
+        plt.title('Terrain over Oslo')
+        im = plt.imshow(terrain, cmap='jet')
+        plt.colorbar(im)
+        cbar = plt.colorbar(im)
+        cbar.set_label('Heigth [m]')
+        plt.xlabel('x [m]')
+        plt.ylabel('y [m]')
+        plt.show()
 
         terrain_full = imageio.v2.imread(self.terrain_file)
-        plt.figure()
-        plt.title('Terrain over Norway 1')
-        plt.imshow(terrain_full, cmap='gray')
-        plt.xlabel('x')
-        plt.ylabel('y')
+        plt.figure(figsize=(10, 10))
+        plt.title('Terrain over Oslo')
+        im = plt.imshow(terrain_full, cmap='jet')
+        cbar = plt.colorbar(im)
+        cbar.set_label('Heigth [m]')
+        plt.xlabel('x [m]')
+        plt.ylabel('y [m]')
         plt.show()
 
 
@@ -129,7 +138,7 @@ class TerrainData:
         return self.y_test
 
 
-    def get_X(self, deg: int=None):
+    def get_X_data(self, deg: int=None): # changed from get_X -> get_X_data
         if deg == None: 
             return self.X
 
@@ -166,7 +175,7 @@ class TerrainData:
 
 
 if __name__ == '__main__':
-    t = TerrainData(5, 500)
+    t = TerrainData(10, 20)
 
     # a = plot_model.PlotModel(t) 
     # a.plot(method='ols_own', data='train')
