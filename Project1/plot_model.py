@@ -9,9 +9,11 @@ import sys
 import ipdb
 import pandas as pd
 import ols 
+import ridge_regression
 import bdb
 importlib.reload(franke_data)
 importlib.reload(ols)
+importlib.reload(ridge_regression)
 plt.style.use('fivethirtyeight')
 
 
@@ -61,32 +63,27 @@ class PlotModel:
         elif data_dim == 2:
 
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
-            self.__2d_plot_franke_fuctnion(ax)
-            self.__2d_plot_model(method, ax)
-            self.__plot_data_points(data, ax)
+            ax1 = fig.add_subplot(121, projection='3d')
+            ax2 = fig.add_subplot(122, projection='3d')
+            self.__2d_plot_franke_fuctnion(ax1)
+            self.__2d_plot_model(method, ax2)
+            self.__plot_data_points(data, ax1)
+            self.__plot_data_points('test', ax1)
+            self.__plot_data_points(data, ax2)
+            self.__plot_data_points('test', ax2)
+            plt.subplots_adjust(wspace=0.1, hspace=0)
 
         else:
             raise ValueError
-        #     x = self.x 
-        #     y = self.y
-        #     z = self.z
 
-        #     if self.data_dim > 1:
-        #         z = z.reshape(self.N, self.N)
-
-        #     fig = plt.figure()
-        #     ax = fig.add_subplot(111, projection='3d')
-        #     if self.data_dim == 2:
-        #         ax.plot_surface(x, y, z) 
-        #     elif self.data_dim == 1:
-        #         ax.plot(x, y, z)
-        #     plt.show()
-
-
-        plt.xlabel('x')
-        plt.ylabel('y')
-        plt.legend()
+        ax1.set_xlabel('x')
+        ax2.set_xlabel('x')
+        ax1.set_ylabel('y')
+        ax2.set_ylabel('y')
+        ax1.set_zlabel('z')
+        ax2.set_zlabel('z')
+        ax1.legend()
+        ax2.legend()
         plt.show()
 
 
@@ -109,7 +106,7 @@ class PlotModel:
         z = z_data[sort_index]
 
         # Plot z data
-        ax.plot(x, y, z, '.', markersize = 2, alpha = 0.5, label = f'{dataset} data')
+        ax.plot(x, y, z, '.', markersize = 5, alpha = 1, label = f'{dataset} data')
 
 
     def __1d_plot_model(self, dataset: str, model: str, ax): 
@@ -121,7 +118,6 @@ class PlotModel:
         elif model == 'ols_skl':
             o = ols.OLS(self.X_train, self.y_train)
             o.skl_ols()
-
         else:
             raise ValueError
 
@@ -175,6 +171,9 @@ class PlotModel:
         elif model == 'ols_skl':
             o = ols.OLS(self.X_train, self.y_train)
             o.skl_ols()
+        elif model == 'ridge_own':
+            o = ridge_regression.RidgeRegression(self.X_train, self.y_train, lamb = 1e-4)
+            o.ridge_skl()
 
         else:
             raise ValueError
@@ -227,14 +226,14 @@ class PlotModel:
 
 if __name__ == '__main__': 
 
-    np.random.seed(0)
+    np.random.seed(1)
 
 
-    max_poly_deg = 1
-    n_data = 100
+    max_poly_deg = 5
+    n_data = 20
     # n_data = 2000000
     test_size = 0.2
-    noise = 0.1
+    noise = 0.2
     data_dim = 2
 
     # XXX:  fix noise plot 
@@ -243,7 +242,7 @@ if __name__ == '__main__':
 
     
     a = PlotModel(f) 
-    a.plot(method='ols_own', data='train')
+    a.plot(method='ridge_own', data='train')
 
 
     # a.plot_model_2d(data_dim = 2)
