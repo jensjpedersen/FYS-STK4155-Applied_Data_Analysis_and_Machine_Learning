@@ -18,6 +18,7 @@ classes/functions can be found at the bottom of each file.
 | resampling.py       | Implementation of K-fold and Bootstrap resampling               |
 | ridge_regression.py | Implementation of our own and sklearn's Ridge Regression method |
 | terrain_data.py     | Class used to generate dataset of Terrain in Oslo               |
+| Oslo.tif            | File containing the terrain data                                |
 
 
 # Reproducibility
