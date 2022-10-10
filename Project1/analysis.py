@@ -206,7 +206,7 @@ if __name__ == '__main__':
     n_data = 1000
     # n_data = 2000000
     test_size = 0.2
-    noise = 0
+    noise = 0.2
 
     f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = 1, add_noise = noise, test_size = test_size)
     X_train, X_test, y_train, y_test = f.get_train_test_data() # XXX pass to function call

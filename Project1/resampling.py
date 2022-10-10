@@ -101,14 +101,13 @@ class ResamplingAnalysis:
             re = Resampling(self.data_object, poly_deg = deg, lamb=lamb)
 
             for method in regression_methods:
-                # y_kfold_test, y_kfold_pred = re.kfold_own(n_splits=n_splits, dataset=dataset, regression_method=method)
-                # XXX: own method not working
+                # Own kfold
                 # mse = re.kfold_own(n_splits=n_splits, dataset=dataset, regression_method=method)
                 # kfold_scores[str(deg)]['mse'][str(method)] = mse
 
-                kfold_scores[str(deg)]['mse'][str(method)] = re.kfold_skl(n_splits, method, dataset) # XXX: test
+                # Skl kfold
+                kfold_scores[str(deg)]['mse'][str(method)] = re.kfold_skl(n_splits, method, dataset) 
 
-                # kfold_scores[str(deg)]['mse'][str(method)] = re.kfold_own(n_splits, method, dataset)
 
 
         return kfold_scores
@@ -431,11 +430,12 @@ def plot_bias_variance_tradeoff(scores, score_list: None, title: str = None, fil
     plt.xlabel('Polynomial degree')
     plt.show()
 
-def plot_heatmap(scores: dict, score_list: list, reg_method: str, title: str = None): 
+def plot_heatmap(scores: dict, score_list: list, reg_method: str, title: str = None, deg_min = 1): 
     """ 
     Parameters:
         reg_method_list: [ridge_own, ols_own, ...] - Must correspond to key in scores dict
         score_list: [mse, bias, ... ] - Must correspond to key in scores dict
+        deg_min : mminimum polynomail degree to include in heat map
     """
 
     # get lambda
@@ -451,16 +451,16 @@ def plot_heatmap(scores: dict, score_list: list, reg_method: str, title: str = N
                 M[j,i] = scores[lamb][deg][score_][reg_method]
 
 
-        plt.figure(figsize=(20,8))
+        plt.figure(figsize=(25,8))
         M_min = np.min(M)
         M_max = np.max(M)
         vmin = M_min
-        vmax = M_min + (M_max - M_min)/3
+        vmax = M_min + (M_max - M_min)/50
         # vmax = 0.03
-        sns.heatmap(M, annot=True, fmt='.5f',
+        sns.heatmap(M[:, deg_min-1:], annot=True, fmt='.1f',
                 vmax = vmax, 
                 cbar_kws={'label': score_.upper()}, 
-                xticklabels = [str(deg) for deg in poly_deg],
+                xticklabels = [str(deg) for deg in poly_deg[deg_min-1:]],
                 yticklabels=[str(lamb) for lamb in lambdas]) 
 
         if title != None: 
@@ -469,17 +469,6 @@ def plot_heatmap(scores: dict, score_list: list, reg_method: str, title: str = N
         plt.xlabel('Polynomial degree')
         plt.ylabel(r'$\lambda$')
         plt.show()
-
-
-
-
-
-    
-
-
-
-
-            
 
 
 
@@ -507,6 +496,11 @@ if __name__ == '__main__':
     f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = data_dim, add_noise = noise, test_size = test_size, set_seed=True)
     ra = ResamplingAnalysis(f)
 
+    # =============== Resampling parameters ===============
+    n_resamples = 100
+    lambda_list = np.logspace(-6, 1, 8)
+    n_splits = 10
+
     # # =============== Kfold ===============
     # regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
     # regression_methods = ['ridge_own', 'ols_own', 'ridge_skl']
@@ -520,19 +514,15 @@ if __name__ == '__main__':
 
     # # =============== Boots ===============
     # regression_methods = ['ols_own', 'ols_skl', 'ridge_own', 'ridge_skl', 'lasso_skl']
-    # regression_methods = ['ols_own']
+    # regression_methods = ['ols_own', 'ols_skl']
     # score_list = ['mse', 'bias', 'variance']
     # n_resamples = 100
     # boots_scores = ra.bootstrap_loop(regression_methods = regression_methods,
-    #         n_resamples = n_resamples, resample_dataset='train', lamb = 0.0001, predict_dataset='train')
+    #         n_resamples = n_resamples, resample_dataset='train', lamb = 0.0001, predict_dataset='test')
     # plot_bias_variance_tradeoff(boots_scores, score_list=score_list, 
     #         title = f'Bootstrap with n resamples = {n_resamples} and n datapoints = {n_data*n_data}')
 
 
-    # =============== Resampling parameters ===============
-    n_resamples = 100
-    lambda_list = np.logspace(-6, 1, 8)
-    n_splits = 10
 
     # # TODO: add possibility to predict on trian data
     # # =============== Boots lambdas heatmap ===============

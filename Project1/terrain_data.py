@@ -82,7 +82,6 @@ class TerrainData:
         return X
 
     def plot_data(self):
-        # Load the terrain
 
         # Show the terrain
         terrain = np.reshape(self.z, (self.N, self.N))

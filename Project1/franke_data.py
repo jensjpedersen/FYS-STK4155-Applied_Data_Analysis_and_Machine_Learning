@@ -39,7 +39,7 @@ class FrankeData:
 
     # Set random seeds
     set_seed: bool = True
-    seed: int = field(init=False, default = 0)
+    seed: int = field(init=False, default = 1)
     rng: np.random.RandomState = field(init=False) # numpy radndom generator
     
 
@@ -68,6 +68,16 @@ class FrankeData:
         else: 
             self.X_train, self.X_test, self.y_train, self.y_test = \
                     train_test_split(self.X, self.z, test_size=self.test_size)
+
+
+    def print_determinants(self):
+        """
+        Prints determinants of X^T@X on training data
+        """
+        for i in range(1, self.n+1): 
+            X = self.get_X_train(i)
+            print(f'deg = {i}')
+            print(f'det = {np.linalg.det(X.T@X)}')
 
 
     def get_train_test_data(self):
@@ -130,6 +140,12 @@ class FrankeData:
             return self.X_train, self.y_train
 
         return self.X_train[:, :self.get_l(deg)], self.y_train
+
+    def get_data(self, deg: int=None):
+        if deg == None:
+            return self.X, self.z
+
+        return self.X[:, :self.get_l(deg)], self.z
 
     # def get_data(self, deg: int=None): 
     #     if deg == None: 
@@ -233,43 +249,18 @@ class FrankeData:
 if __name__ == '__main__':
     tic = time.perf_counter()
 
-    f = FrankeData(n=6, N=1000, add_noise = False, data_dim = 2, set_seed=True)
+    f = FrankeData(n=12, N=20, add_noise = False, data_dim = 2, set_seed=True)
+
+    print(f.get_l(12))
+
+    print(np.shape(f.get_X_train())  )
+    print(np.shape(f.get_X_train(12)))
+
+
+
     toc = time.perf_counter()
+    # f.print_determinants()
     print(f'took: {toc-tic}s')
-    X_train, X_test, y_train, y_test = f.get_train_test_data()
-    print(np.max(y_test))
-
-    f.plot()
+    # X_train, X_test, y_train, y_test = f.get_train_test_data()
 
 
-    # Making meshgrid of datapoints and compute Franke's function
-    sys.exit()
-    n = 5
-    N = 1000
-    z = FrankeFunction(x, y)
-    X = create_X(x, y, n=n)    
-    # split in training and test data
-    X_train, X_test, y_train, y_test = train_test_split(X,z,test_size=0.2)
-
-    clf = skl.LinearRegression().fit(X_train, y_train)
-
-    # The mean squared error and R2 score
-    print("MSE before scaling: {:.2f}".format(mean_squared_error(clf.predict(X_test), y_test)))
-    print("R2 score before scaling {:.2f}".format(clf.score(X_test,y_test)))
-
-    scaler = StandardScaler()
-    scaler.fit(X_train)
-    X_train_scaled = scaler.transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-
-    print("Feature min values before scaling:\n {}".format(X_train.min(axis=0)))
-    print("Feature max values before scaling:\n {}".format(X_train.max(axis=0)))
-
-    print("Feature min values after scaling:\n {}".format(X_train_scaled.min(axis=0)))
-    print("Feature max values after scaling:\n {}".format(X_train_scaled.max(axis=0)))
-
-    clf = skl.LinearRegression().fit(X_train_scaled, y_train)
-
-
-    print("MSE after  scaling: {:.2f}".format(mean_squared_error(clf.predict(X_test_scaled), y_test)))
-    print("R2 score for  scaled data: {:.2f}".format(clf.score(X_test_scaled,y_test)))

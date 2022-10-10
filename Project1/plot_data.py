@@ -23,7 +23,7 @@ class PlotData:
 
     # plt settings
     figsize: tuple = (12, 8)
-    save_fig: bool = True
+    save_fig: bool = False
 
     def __post_init__(self):
         self.poly_deg = np.array([ int(i) for i in self.poly_score.keys() ])
@@ -95,7 +95,6 @@ class PlotData:
                 betas = self.poly_score[str(p)]['beta'][label]
 
                 x_rep = np.ones(len(betas)) * p
-                # breakpoint() 
                 # if p == 1: 
                 #     # Add label
                 #     # plt.plot(x_rep, betas, style[i], label = label, colors=colors)
@@ -107,7 +106,7 @@ class PlotData:
 
 
         plt.title(f'Betas from {label}')
-        plt.yscale('log')
+        # plt.yscale('log')
         plt.ylabel(r'$\beta$')
         plt.xlabel('poly deg')
         plt.legend()
@@ -150,14 +149,14 @@ class PlotData:
 
 if __name__ == '__main__':
 
+    np.random.seed(1)
 
-    max_poly_deg = 5
+    max_poly_deg = 12
     n_data = 20
     test_size = 0.2
     noise = 0.2
     data_dim = 2
 
-    # # np.random.seed(3)
     # max_poly_deg = 25
     # n_data = 1000
     # test_size = 0.2
@@ -167,15 +166,24 @@ if __name__ == '__main__':
     f = franke_data.FrankeData(max_poly_deg, n_data, data_dim = data_dim, add_noise = noise, test_size = test_size, set_seed=True)
     # X_train, X_test, y_train, y_test = f.get_train_test_data()
 
+        
+
     score_list = ['mse', 'r2', 'beta']
+    method_list = ['ols_own', 'ols_own', 'ols_skl', 'ols_skl']
+    method_list = ['ridge_own', 'ridge_own', 'ridge_skl', 'ridge_skl']
+    data_list = ['test', 'train', 'test', 'train']
     a = analysis.Analysis(f)
-    method_list = ['ols_own', 'ols_own']
-    data_list = ['test', 'train']
     score = a.calculate_loop(max_poly_deg, score_list, method_list, data_list, lamb = 0.01)
     p = PlotData(score)
-    p.plot_beta()
     p.plot_mse()
-    p.plot_r2()
+
+        
+    
+    sys.exit()
+
+    
+    # p.plot_beta()
+    # p.plot_r2()
 
     sys.exit()
     score_list = ['mse', 'r2', 'beta']
