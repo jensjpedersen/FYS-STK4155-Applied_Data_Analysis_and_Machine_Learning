@@ -153,7 +153,7 @@ if __name__ == '__main__':
     # =============== Lasso kfold lambdas ===============
     # warnings.filterwarnings('ignore')
     # lasso_kfold_lamb_scores = ra.kfold_lamb_loop( regression_methods=['lasso_skl'], n_splits=n_splits, dataset='data', lambda_list=lambda_list)
-    # resampling.resampling..plot_heatmap(lasso_kfold_lamb_scores, ['mse'], reg_method='lasso_skl', title=f'Lasso regression with KFold cross validation, k_folds = {n_splits}')
+    # resampling.plot_heatmap(lasso_kfold_lamb_scores, ['mse'], reg_method='lasso_skl', title=f'Lasso regression with KFold cross validation, k_folds = {n_splits}')
 
     
     # =============== Summary of best scores, ridge, lasso, mse (kfold, boots) ===============

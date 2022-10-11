@@ -126,10 +126,6 @@ if __name__ == '__main__':
     #ols_boots_scores = ra.bootstrap_loop(regression_methods = regression_methods,
             #n_resamples = n_resamples, resample_dataset='train', lamb = 1e-5, predict_dataset='test')
 
-
-    # toc = time.perf_counter()
-    # print(f'took: {toc-tic}')
-
     # score_list = ['mse', 'bias', 'variance']
     # resampling.plot_bias_variance_tradeoff(ols_boots_scores, score_list)
     # score_list = ['r2']

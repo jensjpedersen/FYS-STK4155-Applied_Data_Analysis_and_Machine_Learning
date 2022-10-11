@@ -1,7 +1,8 @@
 
 # Info 
 All files can be run as scripts. Examples of how to use the different
-classes/functions can be found at the bottom of each file.
+classes/functions can be found at the bottom of each file. Some of the data
+produced is stored in the data directory.  
 
 # Files
 | Filename            | Description                                                     |
@@ -23,7 +24,8 @@ classes/functions can be found at the bottom of each file.
 
 # Reproducibility
 In order to reproduce the data and figures in the report, uncomment the
-different sections in main_franke.py and main_terrain.py 
+different sections in main_franke.py and main_terrain.py.  
  
+
 
 
