@@ -45,6 +45,12 @@ class PolyData:
     def get_y_test(self):
         return self.y_test
 
+    def get_train(self):
+        return self.X_train, self.y_train
+
+    def get_test(self):
+        return self.X_test, self.y_test
+
     def __create_datapoints(self): 
         x = np.linspace(self.x_range[0], self.x_range[1], self.n_data)
         object.__setattr__(self, 'x', x)
@@ -83,14 +89,6 @@ class PolyData:
         plt.axis('equal')
         plt.show()
 
-
-        
-
-        
-        # object.__setattr__(self, 'x', )
-    
-
-    
 
 
 
