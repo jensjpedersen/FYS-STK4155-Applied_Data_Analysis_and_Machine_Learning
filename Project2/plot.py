@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass, field
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,11 +24,23 @@ class Plot:
         n_features = list(thetas_dict.values())[0].shape[1]
         
         # TODO: plot theta in same plot
-        # for i in range(n_features): 
-        #     for method, thetas in thetas_dict.items():
-        #         mse_scores = np.zeros(len(thetas))
+        for i in range(n_features): 
+            plt.figure()
 
-        # breakpoint() 
+            for method, thetas in thetas_dict.items():
+                mse_scores = np.zeros(len(thetas))
+
+                for j in range(np.shape(thetas)[0]):
+                    theta = thetas[j,:].reshape(-1, 1)
+                    mse_scores[j] = mse(y, X@theta)
+
+                sns.set_style("darkgrid")
+                plt.xlabel(f'$\\theta_{i}$')
+                plt.ylabel('MSE')
+                sns.scatterplot(x=thetas[:,i], y=mse_scores, label=method)
+        plt.show()
+        sys.exit()
+
         for method, thetas in thetas_dict.items():
 
             mse_scores = np.zeros(len(thetas))
