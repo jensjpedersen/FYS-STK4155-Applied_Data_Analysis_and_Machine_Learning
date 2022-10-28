@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 # import numpy as np
+import sys
 import matplotlib.pyplot as plt
 import pandas as pd 
 import seaborn as sns
@@ -16,8 +17,8 @@ class GradientDescent:
 
     dataset:str = 'train'
 
-    X_data: np.ndarray = field(init=False, repr=False)
-    y_data: np.ndarray = field(init=False, repr=False)
+    X_data: np.ndarray = field(init=False, repr=False) # X data with resepct to dataset variable
+    y_data: np.ndarray = field(init=False, repr=False) # y --||--
 
     thetas: np.ndarray = field(init=False, repr=False) # Array with thetas for all iterations
     thetas_init: np.ndarray = field(init=False) # Intial condition for thata
@@ -104,6 +105,34 @@ class GradientDescent:
             change = new_change
 
         self.thetas = thetas
+
+    def sgd(self, eta: float, size_batch: int, n_epochs: int = 100):
+
+        n_data = len(self.y_data)
+        n_minibatches = int(n_data/size_batch)
+
+        print(f'n_data = {n_data}')
+        print(f'n_minibatches = {n_minibatches}')
+        print(f'n_epochs = {n_epochs}')
+        print(f'size_batch = {size_batch}')
+        
+
+        for epoch in range(n_epochs): 
+            for i in range(n_minibatches): 
+                k = np.random.randint(n_minibatches) # Pick random minibatch
+                slice_0 = k*size_batch
+                slice_1 = (k+1)*size_batch 
+                minibatch_X = self.X_data[slice_0:slice_1]
+                minibatch_y = self.y_data[slice_0:slice_1]
+
+                print(f'k = {k}')
+                print(f'minibatch_X = {minibatch_X}')
+                print(f'minibatch_y = {minibatch_y}')
+
+
+        print(f'self.X_data = {self.X_data}')
+        print(f'self.y_data = {self.y_data}')
+        
 
 
 
