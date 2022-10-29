@@ -10,8 +10,9 @@ import matplotlib.pyplot as plt
 
 @dataclass(frozen=True)
 class PolyData: 
+    n_data: int
+
     x_range: tuple = (-1,1)
-    n_data = 100
     coeff: tuple = (1, 0, 1)
 
     test_size: float = 0.2

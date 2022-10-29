@@ -14,7 +14,7 @@ class Plot:
     data_object: object
 
 
-    def plot_mse_vs_theta(self, thetas_dict: dict, dataset: str ='train'): 
+    def plot_mse_vs_theta(self, thetas_dict: dict, dataset: str ='test'): 
         get_func_name = f'get_{dataset}'
         get_data = getattr(self.data_object, get_func_name)
         X, y = get_data()
@@ -23,7 +23,6 @@ class Plot:
 
         n_features = list(thetas_dict.values())[0].shape[1]
         
-        # TODO: plot theta in same plot
         for i in range(n_features): 
             plt.figure()
 
@@ -39,25 +38,12 @@ class Plot:
                 plt.ylabel('MSE')
                 sns.scatterplot(x=thetas[:,i], y=mse_scores, label=method)
         plt.show()
-        sys.exit()
-
-        for method, thetas in thetas_dict.items():
-
-            mse_scores = np.zeros(len(thetas))
-
-            for i in range(np.shape(thetas)[0]):
-                theta = thetas[i,:].reshape(-1, 1)
-                mse_scores[i] = mse(y, X@theta)
-
-            for i in range(np.shape(thetas)[1]):
-                plt.figure()
-                sns.set_style("darkgrid")
-                plt.xlabel(f'$\\theta_{i}$')
-                plt.ylabel('MSE')
-                sns.scatterplot(x=thetas[:,i], y=mse_scores)
-            plt.show()
 
 
+    def plot_iter(self): 
+        """ Plot prediction for iteration n
+        """
+        pass
 
 
 
