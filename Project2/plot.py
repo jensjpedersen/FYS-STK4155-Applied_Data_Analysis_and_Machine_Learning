@@ -24,7 +24,8 @@ class Plot:
         n_features = list(thetas_dict.values())[0].shape[1]
         
         for i in range(n_features): 
-            plt.figure()
+            fig, ax = plt.subplots()
+            # plt.figure()
 
             for method, thetas in thetas_dict.items():
                 mse_scores = np.zeros(len(thetas))
@@ -36,7 +37,11 @@ class Plot:
                 sns.set_style("darkgrid")
                 plt.xlabel(f'$\\theta_{i}$')
                 plt.ylabel('MSE')
-                sns.scatterplot(x=thetas[:,i], y=mse_scores, label=method)
+                sns.lineplot(x=thetas[:,i], y=mse_scores, marker='o', linewidth=0, label=method)
+
+            self.toggle_legend(ax)
+        # plt.show()
+
         plt.show()
 
 
@@ -44,6 +49,30 @@ class Plot:
         """ Plot prediction for iteration n
         """
         pass
+
+
+    def toggle_legend(self, ax):
+        leg = ax.legend(fancybox=True, shadow=True)
+
+        lined = {}  # Will map legend lines to original lines.
+        for legline, origline in zip(leg.get_lines(), ax.get_lines()):
+            legline.set_picker(True)  # Enable picking on the legend line.
+            lined[legline] = origline
+
+
+        def on_pick(event):
+            # On the pick event, find the original line corresponding to the legend
+            # proxy line, and toggle its visibility.
+            legline = event.artist
+            origline = lined[legline]
+            visible = not origline.get_visible()
+            origline.set_visible(visible)
+            # Change the alpha on the line in the legend so we can see what lines
+            # have been toggled.
+            legline.set_alpha(1.0 if visible else 0.2)
+            ax.get_figure().canvas.draw()
+
+        ax.get_figure().canvas.mpl_connect('pick_event', on_pick)
 
 
 
