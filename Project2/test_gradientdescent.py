@@ -22,34 +22,22 @@ if __name__ == '__main__':
     n_epochs = 100
     n_epochs_sgd = 50
     p = poly_data.PolyData(n_data = 100)
+    momentum = 0.1
+    size_batch = 20
     
     gm = gradient_descent.GradientDescent(p)
 
-
-    # gm.gd(eta, n_epochs, 0.1) 
-    # gd_momentum1 = gm.get_thetas()
-    # gm.gd_momentum(eta, 0.1, n_epochs)
-    # gd_momentum2 = gm.get_thetas()
-
-
-    # gd_dic = {'gd1': gd_momentum1, 'gd2': gd_momentum2}
-    # pl = plot.Plot(p)
-    # pl.plot_mse_vs_theta(gd_dic)
-
-
-
-
-    gm.plane_gd(eta, n_epochs)
+    gm.gd(eta, n_epochs)
     gd_plain = gm.get_thetas()
 
-    gm.gd_momentum(eta, 0.1, n_epochs)
+    gm.gd(eta, n_epochs, momentum)
     # gm.gd(eta, n_epochs, 0.1) 
     gd_momentum = gm.get_thetas()
 
-    gm.sgd( eta, 20, n_epochs_sgd)
+    gm.sgd( eta, n_epochs_sgd, size_batch)
     sgd = gm.get_thetas()
 
-    gm.sgd_momentum(eta, 0.1, 20, n_epochs_sgd)
+    gm.sgd( eta, n_epochs_sgd, size_batch, momentum)
     sgd_momentum = gm.get_thetas()
 
     # Plotting
