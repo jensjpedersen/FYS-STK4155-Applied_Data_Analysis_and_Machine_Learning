@@ -102,7 +102,43 @@ class GradientDescent:
 
         self.thetas = thetas
 
+
     def gd_momentum(self, eta: float, gamma: float, n_epochs: int = 100):
+        """ 
+        eta = learning rate
+        gamma = momentum 
+        """
+
+        if not 0 <= gamma <= 1:
+            raise ValueError('Allowed range for gamma: [0, 1]')
+
+
+        # Initial values 
+        n_coeff = len(self.data_object.coeff) # Number of polynomail coefficents inlcuding 0
+        theta_new = self.thetas_init
+        change = 0.0
+
+        thetas = np.zeros((n_epochs+1, n_coeff))
+        thetas[0,:] = theta_new.T
+
+        for i in range(1, n_epochs+1): 
+            # Change to while wiht tolearnace
+            theta_old = theta_new
+
+            # Claculate gradient
+            grad_func = grad(self.costOLS, 2)
+
+            gradients = grad_func(self.X_data, self.y_data, theta_new)
+            # theta_new = eta*gradients
+            new_change = eta*gradients + gamma*change
+            theta_new = theta_old - new_change
+            thetas[i,:] = theta_new.T
+
+            change = new_change
+
+        self.thetas = thetas
+
+    def new(self, eta: float, n_epochs: int = 100, gamma: float = None):
         """ 
         eta = learning rate
         gamma = momentum 
