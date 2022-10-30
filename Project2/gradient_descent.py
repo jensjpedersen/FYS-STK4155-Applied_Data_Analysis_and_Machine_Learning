@@ -45,7 +45,8 @@ class GradientDescent:
         self.set_initial_conditions()
     
     def costOLS(self, X, y, theta):
-        return jnp.sum((y[:,np.newaxis] - X @ theta)**2)
+        assert(len(y) != 1)
+        return jnp.sum((y[:,np.newaxis] - X @ theta)**2)/len(y) # XXX
 
     def grad_costOLS(self): 
         return 
@@ -59,9 +60,26 @@ class GradientDescent:
         print(self.thetas_init)
 
 
-    def plane_gd(self, eta: float, n_epochs: int = 100): 
+    def delta_gd(self, X, y, theta, eta, momentum = None): 
+        grad_func = grad(self.costOLS, 2)
+        gradients = grad_func(X, y, theta)
+
+        if momentum == None:
+            return -eta * gradients
+
+
+    
+        
+
+    def update_adagrad(self, X, y, theta):
+        pass
+
+
+    def plane_gd(self, eta: float, n_epochs: int = 100, tune_method: str = None): 
         """ 
         eta = learning rate
+
+        tune_method = None (constant learning rate), adagrad, rmsprop, adam
         """
         n_coeff = len(self.data_object.coeff) # Number of polynomail coefficents inlcuding 0
         theta_new = self.thetas_init # Intial guess for thetas
@@ -76,10 +94,10 @@ class GradientDescent:
             # Change to while wiht tolearnace
             theta_old = theta_new
 
+            # Update func returns change
             # Claculate gradient
-            grad_func = grad(self.costOLS, 2)
-            gradients = grad_func(self.X_data, self.y_data, theta_new)
-            theta_new = theta_old - eta*gradients
+            delta = self.delta_gd(self.X_data, self.y_data, theta_new, eta)
+            theta_new = theta_old + delta
             thetas[i,:] = theta_new.T
 
         self.thetas = thetas
@@ -159,7 +177,6 @@ class GradientDescent:
         self.thetas = thetas
 
 
-    @log_time
     def sgd_momentum(self, eta: float, gamma: float, size_batch: int, n_epochs: int = 100):
 
         if not 0 <= gamma <= 1:
