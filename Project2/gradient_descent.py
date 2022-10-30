@@ -123,56 +123,18 @@ class GradientDescent:
 
         self.thetas = thetas
 
-    def sgd(self, eta: float, size_batch: int, n_epochs: int = 100):
 
-        n_coeff = len(self.data_object.coeff) # Number of polynomail coefficents inlcuding 0
-        theta_new = self.thetas_init # Intial guess for thetas
+    def sgd(self, eta: float, n_epochs: int, size_batch: int, gamma: float = None):
 
-
-        n_data = len(self.y_data)
-        n_minibatches = int(n_data/size_batch)
-
-        thetas = np.zeros((n_epochs*n_minibatches+1, n_coeff))
-        thetas[0,:] = theta_new.T
-        j = 1
-
-
-        for epoch in range(1, n_epochs+1): 
-            for i in range(n_minibatches): 
-                k = np.random.randint(n_minibatches) # Pick random minibatch
-                slice_0 = k*size_batch
-                slice_1 = (k+1)*size_batch 
-                # XXX: Each batch is predifiend
-                # XXX: Same minibatch may be selected twice
-                minibatch_X = self.X_data[slice_0:slice_1]
-                minibatch_y = self.y_data[slice_0:slice_1]
-
-                #XXX Thata updated for each i or only epochs
-
-                # Change to while wiht tolearnace
-                theta_old = theta_new
-
-                # Claculate gradient
-                grad_func = grad(self.costOLS, 2)
-                gradients = grad_func(minibatch_X, minibatch_y, theta_new)
-                theta_new = theta_old - eta*gradients
-                thetas[j,:] = theta_new.T
-
-                j+=1
-
-        self.thetas = thetas
-
-
-    def sgd_momentum(self, eta: float, gamma: float, size_batch: int, n_epochs: int = 100):
-
-        if not 0 <= gamma <= 1:
-            raise ValueError('Allowed range for gamma: [0, 1]')
+        if gamma != None:
+            if not 0 <= gamma <= 1:
+                raise ValueError('Allowed range for gamma: [0, 1]')
+            change = 0.0
 
 
         # Initial values 
         n_coeff = len(self.data_object.coeff) # Number of polynomail coefficents inlcuding 0
         theta_new = self.thetas_init # Intial guess for thetas
-        change = 0.0
 
 
         n_data = len(self.y_data)
@@ -186,6 +148,7 @@ class GradientDescent:
         for epoch in range(1, n_epochs+1): 
             for i in range(n_minibatches): 
                 k = np.random.randint(n_minibatches) # Pick random minibatch
+                k = i # XXX: remove
                 slice_0 = k*size_batch
                 slice_1 = (k+1)*size_batch 
                 # XXX: Each batch is predifiend
@@ -199,10 +162,17 @@ class GradientDescent:
                 theta_old = theta_new
 
                 # Claculate gradient
-                grad_func = grad(self.costOLS, 2)
-                gradients = grad_func(minibatch_X, minibatch_y, theta_new)
+                if gamma != None:
+                    grad_func = grad(self.costOLS, 2)
+                    gradients = grad_func(minibatch_X, minibatch_y, theta_new)
 
-                new_change = eta*gradients + gamma*change
+                    new_change = eta*gradients + gamma*change
+                else: 
+                    grad_func = grad(self.costOLS, 2)
+                    gradients = grad_func(minibatch_X, minibatch_y, theta_new)
+
+                    new_change = eta*gradients 
+
                 theta_new = theta_old - new_change
                 thetas[j,:] = theta_new.T
 
@@ -210,7 +180,6 @@ class GradientDescent:
                 j+=1
 
         self.thetas = thetas
-
 
         
     def get_theta(self): 
