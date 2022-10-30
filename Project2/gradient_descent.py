@@ -12,6 +12,18 @@ from jax import grad
 # import jax.numpy as np 
 # from autograd import grad 
 import pprint
+import time
+
+
+def log_time(func):
+    def wrapper(*args, **kwargs):
+        tic = time.perf_counter()
+        result = func(*args, **kwargs)
+        toc = time.perf_counter()
+        print(f'Function {func.__name__!r} executed in {(toc-tic):.4f}s')
+        return result
+
+    return wrapper
 
 
 @dataclass()
@@ -147,6 +159,7 @@ class GradientDescent:
         self.thetas = thetas
 
 
+    @log_time
     def sgd_momentum(self, eta: float, gamma: float, size_batch: int, n_epochs: int = 100):
 
         if not 0 <= gamma <= 1:
