@@ -39,11 +39,11 @@ if __name__ == '__main__':
 
 
 
-    gm.gd(eta, n_epochs)
+    gm.plane_gd(eta, n_epochs)
     gd_plain = gm.get_thetas()
 
-    # gm.gd_momentum(eta, 0.1, n_epochs)
-    gm.gd(eta, n_epochs, 0.1) 
+    gm.gd_momentum(eta, 0.1, n_epochs)
+    # gm.gd(eta, n_epochs, 0.1) 
     gd_momentum = gm.get_thetas()
 
     gm.sgd( eta, 20, n_epochs_sgd)
