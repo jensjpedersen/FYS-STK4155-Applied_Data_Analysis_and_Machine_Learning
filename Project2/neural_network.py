@@ -25,7 +25,7 @@ class Layer(abc.ABC):
         " Returns output from layer "
 
     @abc.abstractmethod
-    def feed_forward() -> None:
+    def feed_forward(stdout: bool = False) -> None:
         " Calculates ouput from layer "
 
 
@@ -52,7 +52,7 @@ class InputLayer(Layer):
     def get_output(self): 
         return self.X
 
-    def feed_forward(self):
+    def feed_forward(self, stdout:bool = False):
         pass
 
     
@@ -68,9 +68,6 @@ class HiddenLayer(Layer):
 
     a_l: np.ndarray = field(init=False, repr=False, default=None) # output from Activation function. Size (n nodes in layer l-) x (n_data)
 
-    # def __post_init__(self): 
-    #     breakpoint() 
-
     def init_bias_and_weigths(self):
         # TODO: check if prev layer is Initialized
         self.b = np.zeros(self.n_nodes) + 0.01
@@ -82,11 +79,14 @@ class HiddenLayer(Layer):
 
         return self.a_l
 
-    def feed_forward(self) -> None:
+    def feed_forward(self, stdout: bool = False) -> None:
         output_prev_layer = self.prev_Layer.get_output()
         z_l = output_prev_layer @ self.W + self.b # Feed forward
         a_l = sigmoid(z_l)  # Activation func
         self.a_l = a_l
+
+        if stdout == True: 
+            print(f'z_l: ({z_l.shape}) = a_(l-1): ({output_prev_layer.shape}) @ W: ({self.W.shape}) + b: ({self.b.shape})')
 
 @dataclass
 class OutputLayer(Layer):
@@ -112,11 +112,14 @@ class OutputLayer(Layer):
 
         return self.a_l
 
-    def feed_forward(self) -> None:
-        output_prev_layer = self.prev_Layer.get_ouput()
+    def feed_forward(self, stdout: bool = False) -> None:
+        output_prev_layer = self.prev_Layer.get_output()
         z_l = output_prev_layer @ self.W + self.b # Feed forward
         a_l = sigmoid(z_l)  # Activation func
         self.a_l = a_l
+
+        if stdout == True: 
+            print(f'z_l: ({z_l.shape}) = a_(l-1): ({output_prev_layer.shape}) @ W: ({self.W.shape}) + b: ({self.b.shape})')
 
 @dataclass 
 class NeuralNetwork:
@@ -138,7 +141,6 @@ class NeuralNetwork:
 
         self.n_features = self.X_data.shape[1]
         self.n_data = self.X_data.shape[0]
-        self.n_targets = 10 # XXX: Automatize 
 
         self.__init_layers()
 

@@ -30,12 +30,11 @@ def test_layers(nn: neural_network.NeuralNetwork):
 
     print('Test layers OK')
 
-def test_feed_forward(nn: neural_network.NeuralNetwork):
-    # Print matrix sizes
+def test_feed_forward(nn: neural_network): 
+    " Prints size of matrices " 
     layers = nn.get_layers()
-    print(' z_l    =       a^l  @ W^l   +    b^l')
     for l, layer in enumerate(layers): 
-        print(f'z_{l}: {np.shape(layer.W)}   empty  {np.shape(layer.b)}')
+        layer.feed_forward(stdout=True)
 
 
 
@@ -50,16 +49,16 @@ if __name__ == '__main__':
     p = poly_data.PolyData(n_data=100)
 
     depth = 2
-    width = 10
+    width = 20
     n_targets = 3
     nn = neural_network.NeuralNetwork(p, depth, width, n_targets)
 
-    l1 = nn.get_layers(0)
-    l2 = nn.get_layers(1)
-    l3 = nn.get_layers(2)
-    l4 = nn.get_layers(3)
+    # l1 = nn.get_layers(0)
+    # l2 = nn.get_layers(1)
+    # l3 = nn.get_layers(2)
+    # l4 = nn.get_layers(3)
 
-    # test_feed_forward(nn)
+    test_feed_forward(nn)
     # tn = neural_network.TrainNetwork(nn)
     # tn.feed_forward()
 
