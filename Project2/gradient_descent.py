@@ -85,10 +85,11 @@ class GradientDescent:
 
 
 
-    def gd(self, eta: float, n_epochs: int = 100, gamma: float = None):
+    def gd(self, eta: float, n_epochs: int = 100, gamma: float = None, lamb: float = 0):
         """ 
         eta = learning rate
         gamma = momentum 
+        lamb: l2 regularization parameter if 0 -> mse
         """
 
         if gamma != None: 
@@ -108,17 +109,19 @@ class GradientDescent:
             # Change to while wiht tolearnace
             theta_old = theta_new
 
-            # Claculate gradient
-            if gamma!=None: 
+            # Use OLS or L2 regularization as cost funciton
+            if lamb==0: 
                 grad_func = grad(self.costOLS, 2)
-
                 gradients = grad_func(self.X_data, self.y_data, theta_new)
-                # theta_new = eta*gradients
+            else:
+                grad_func = grad(self.costRidge, 2)
+                gradients = grad_func(self.X_data, self.y_data, theta_new, lamb)
+
+            if gamma!=None: 
+                # Use gradient descent with momentum
                 new_change = eta*gradients + gamma*change
             else:
-                grad_func = grad(self.costOLS, 2)
-                gradients = grad_func(self.X_data, self.y_data, theta_new)
-                # theta_new = eta*gradients
+                # Use gradient descent to update
                 new_change = eta*gradients
 
 
@@ -130,7 +133,10 @@ class GradientDescent:
         self.thetas = thetas
 
 
-    def sgd(self, eta: float, n_epochs: int, size_batch: int, gamma: float = None):
+    def sgd(self, eta: float, n_epochs: int, size_batch: int, gamma: float = None, lamb: float = 0):
+        """
+        lamb: l2 regularization parameter if 0 -> mse
+        """
 
         if gamma != None:
             if not 0 <= gamma <= 1:
@@ -166,15 +172,20 @@ class GradientDescent:
                 theta_old = theta_new
 
                 # Claculate gradient
-                if gamma != None:
+
+                # Use OLS or L2 regularization as cost funciton
+                if lamb == 0: 
                     grad_func = grad(self.costOLS, 2)
                     gradients = grad_func(minibatch_X, minibatch_y, theta_new)
+                else:
+                    grad_func = grad(self.costRidge, 2)
+                    gradients = grad_func(minibatch_X, minibatch_y, theta_new, lamb)
 
+                if gamma != None:
+                    # sgd with momentum
                     new_change = eta*gradients + gamma*change
                 else: 
-                    grad_func = grad(self.costOLS, 2)
-                    gradients = grad_func(minibatch_X, minibatch_y, theta_new)
-
+                    # plain sgd 
                     new_change = eta*gradients 
 
                 theta_new = theta_old - new_change
