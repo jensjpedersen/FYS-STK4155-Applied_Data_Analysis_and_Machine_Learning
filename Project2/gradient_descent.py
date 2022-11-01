@@ -46,7 +46,14 @@ class GradientDescent:
     
     def costOLS(self, X, y, theta):
         assert(len(y) != 1)
-        return jnp.sum((y[:,np.newaxis] - X @ theta)**2)/len(y) # XXX
+        y_pred = X @ theta
+        return jnp.sum((y[:,np.newaxis] - y_pred)**2) #/len(y) # XXX
+
+    def costRidge(self, X, y, theta, lamb): 
+        assert(len(y) != 1)
+        y_pred = X @ theta
+        return jnp.sum((y[:,np.newaxis] - y_pred)**2) + lamb * np.sum(y_pred**2) #/len(y) # XXX
+
 
     def grad_costOLS(self): 
         return 
@@ -110,7 +117,6 @@ class GradientDescent:
                 new_change = eta*gradients + gamma*change
             else:
                 grad_func = grad(self.costOLS, 2)
-
                 gradients = grad_func(self.X_data, self.y_data, theta_new)
                 # theta_new = eta*gradients
                 new_change = eta*gradients
@@ -156,9 +162,7 @@ class GradientDescent:
                 minibatch_X = self.X_data[slice_0:slice_1]
                 minibatch_y = self.y_data[slice_0:slice_1]
 
-                #XXX Thata updated for each i or only epochs
-
-                # Change to while wiht tolearnace
+                # TODO: Change to while wiht tolearnace
                 theta_old = theta_new
 
                 # Claculate gradient
