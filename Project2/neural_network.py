@@ -89,7 +89,7 @@ class HiddenLayer(Layer):
         self.a_l = a_l
 
 @dataclass
-class OuputLayer(Layer):
+class OutputLayer(Layer):
     n_nodes: int # n_nodes = n_targets
 
     W: np.ndarray = field(init=False, repr=False)
@@ -147,21 +147,16 @@ class NeuralNetwork:
         # Init input layer
 
         # Get input data
-        # TODO replace __input_layer, __input_layer, __output_layer
-        input_Layer = self.__input_layer()
-        self.Layers.append(input_Layer)
+        self.Layers.append(InputLayer(self.X_data))
 
         # Init hidden layers
         for i in range(self.n_hidden_layers):
-            # self.Layers.append(self.__hidden_layer(self.n_nodes_per_hidden_layer))
             print(f'i = {i}')
             print(f'selv.n_nodes_per_hidden_layer = {self.n_nodes_per_hidden_layer}')
             
-            
             self.Layers.append(HiddenLayer( self.n_nodes_per_hidden_layer))
 
-        # Init ouput layer
-        self.Layers.append(self.__output_layer(self.n_targets))
+        self.Layers.append(OutputLayer( self.n_targets))
 
         # Connect layers
         for i, Layer in enumerate(self.Layers):
@@ -175,28 +170,6 @@ class NeuralNetwork:
         for i, layer in enumerate(self.Layers): 
             layer.init_bias_and_weigths()
 
-
-
-
-    def __input_layer(self): 
-        """Returns input layer object"""
-        il = InputLayer(self.X_data)
-        return il
-
-    def __hidden_layer(self, n_nodes: int): 
-        """Returns hidden layer object"""
-        # W = np.random.randn(self.n_features, n_nodes)
-        # b = np.zeros(self.n_nodes_per_hidden_layer) + 0.01
-        hl = HiddenLayer(n_nodes)
-        return hl
-
-
-    def __output_layer(self, n_targets: int):
-        """Returns output layer object"""
-        # W = np.random.randn(self.n_nodes_per_hidden_layer, n_nodes)
-        # b = np.zeros(self.n_nodes_per_hidden_layer) + 0.01
-        ol = OuputLayer(n_targets)
-        return ol
 
     def get_layers(self, l: int = None):
         if l == None: 
