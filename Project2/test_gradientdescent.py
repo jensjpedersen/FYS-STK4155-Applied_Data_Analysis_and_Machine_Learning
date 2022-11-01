@@ -18,9 +18,9 @@ if __name__ == '__main__':
     reload(gradient_descent)
     reload(plot)
 
-    eta = 0.15
-    n_epochs = 100
-    n_epochs_sgd = 50
+    eta = 0.001
+    n_epochs = 50 
+    n_epochs_sgd = 20
     p = poly_data.PolyData(n_data = 100)
     momentum = 0.1
     size_batch = 20
