@@ -53,10 +53,16 @@ if __name__ == '__main__':
     n_targets = 3
     nn = neural_network.NeuralNetwork(p, depth, width, n_targets)
 
-    # l1 = nn.get_layers(0)
-    # l2 = nn.get_layers(1)
-    # l3 = nn.get_layers(2)
-    # l4 = nn.get_layers(3)
+    l1 = nn.get_layers(0)
+    l1.feed_forward()
+    l2 = nn.get_layers(1)
+    l2.feed_forward()
+    l3 = nn.get_layers(2)
+    l3.feed_forward()
+    l4 = nn.get_layers(3)
+    l4.feed_forward()
+
+    l4.update_weights()
 
     test_feed_forward(nn)
     # tn = neural_network.TrainNetwork(nn)

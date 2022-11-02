@@ -8,9 +8,25 @@ import poly_data
 import numpy as np
 import pprint
 import time
+import jax.numpy as jnp 
+from jax import grad
+
+def SE(y, t):
+    """ Squared error cost function""" # XXX: removed 1/2
+    # assert(len(y.shape) == 1)
+    return jnp.sum((t - y)**2)
+
+def costRidge(y, t, lamb): 
+    # assert(len(y.shape) == 1)
+    return jnp.sum((t - y)**2) + lamb * np.sum(y**2)
 
 def sigmoid(x):
-    return 1/(1 + np.exp(-x))
+    return 1/(1 + jnp.exp(-x))
+
+def derivative_sigmoid(sigm): 
+    """ Input values gotten from sigmoid funcitno """
+    return sigm * (1 - sigm)
+
 
 # TODO: incremental id
 @dataclass
@@ -28,6 +44,10 @@ class Layer(abc.ABC):
     def feed_forward(stdout: bool = False) -> None:
         " Calculates ouput from layer "
 
+    @abc.abstractmethod
+    def update_weights() -> None: 
+        """ Calculates derivate of cost function with respect to weigts and bias for current layer """
+
 
 
 @dataclass
@@ -43,6 +63,8 @@ class InputLayer(Layer):
     prev_Layer = None
     next_Layer = object()
 
+    update: bool = None # True when layers is ready for update, else False
+
     def __post_init__(self): 
         self.n_nodes = np.shape(self.X)[1]
 
@@ -55,6 +77,9 @@ class InputLayer(Layer):
     def feed_forward(self, stdout:bool = False):
         pass
 
+    def update_weights(self) -> None:
+        self.update = False
+
     
 @dataclass
 class HiddenLayer(Layer):
@@ -66,7 +91,13 @@ class HiddenLayer(Layer):
     prev_Layer: Layer = field(init=False, repr=False, default=lambda: object())
     next_Layer: Layer = field(init=False, repr=False, default=lambda: object())
 
+    update: bool = None # True when layers is ready for update, else False
+
     a_l: np.ndarray = field(init=False, repr=False, default=None) # output from Activation function. Size (n nodes in layer l-) x (n_data)
+
+    # Imparatn quantities for back back propagation
+    derivative_activation: np.ndarray = field(init=False, repr=False) # Derivative of activation function with respect to z^l
+    delta: np.ndarray = field(init=False, repr=False) # Derivate of Cost with respect to bias
 
     def init_bias_and_weigths(self):
         # TODO: check if prev layer is Initialized
@@ -82,14 +113,20 @@ class HiddenLayer(Layer):
     def feed_forward(self, stdout: bool = False) -> None:
         output_prev_layer = self.prev_Layer.get_output()
         z_l = output_prev_layer @ self.W + self.b # Feed forward
+
+        # TODO: differnet activation function
+        # If activation == 'sigmoid'
         a_l = sigmoid(z_l)  # Activation func
         self.a_l = a_l
+        self.derivative_activation = derivative_sigmoid(a_l) # Calculate derivate of sigmoid funciton
+
 
         if stdout == True: 
             print(f'z_l: ({z_l.shape}) = a_(l-1): ({output_prev_layer.shape}) @ W: ({self.W.shape}) + b: ({self.b.shape})')
 
 @dataclass
 class OutputLayer(Layer):
+    t: np.ndarray = field(repr=False) # Targets
     n_nodes: int # n_nodes = n_targets
 
     W: np.ndarray = field(init=False, repr=False)
@@ -98,9 +135,15 @@ class OutputLayer(Layer):
     prev_Layer: Layer = field(init=False, repr=False, default=lambda: object())
     next_Layer = None
 
+    update: bool = None # True when layers is ready for update, else False
+
     a_l: np.ndarray = field(repr=False, default=None) # output from Activation function. Size (n nodes in layer l-) x (n_data)
                            # Initialize varablie with method: feed_forward
     # def __post_init__(self):
+
+    def __post_init__(self):
+        if len(self.t.shape) == 1:
+            self.t = self.t[:,np.newaxis]
 
     def init_bias_and_weigths(self): 
         self.b = np.zeros(self.n_nodes) + 0.01
@@ -113,9 +156,16 @@ class OutputLayer(Layer):
         return self.a_l
 
     def feed_forward(self, stdout: bool = False) -> None:
+        if self.update == True: 
+            raise ValueError('Network is ready for update. Run method update_weights before next iteration')
+
         output_prev_layer = self.prev_Layer.get_output()
         z_l = output_prev_layer @ self.W + self.b # Feed forward
+
+        # TODO: option for activation function
+        # Sigmoid as activation function for output layer
         a_l = sigmoid(z_l)  # Activation func
+        self.derivative_activation = derivative_sigmoid(a_l)
         self.a_l = a_l
 
         if stdout == True: 
@@ -127,7 +177,7 @@ class NeuralNetwork:
     n_hidden_layers: int
     n_nodes_per_hidden_layer: int
     # n_targets: int = field(init=False)
-    n_targets: int
+    n_output_nodes: int
 
     n_features: int = field(init=False)
     n_data: int = field(init=False)
@@ -158,7 +208,9 @@ class NeuralNetwork:
             
             self.Layers.append(HiddenLayer( self.n_nodes_per_hidden_layer))
 
-        self.Layers.append(OutputLayer( self.n_targets))
+        # self.Layers.append(OutputLayer( self.n_targets))
+        targets = self.y_data
+        self.Layers.append(OutputLayer(targets, self.n_output_nodes))
 
         # Connect layers
         for i, Layer in enumerate(self.Layers):
@@ -178,10 +230,19 @@ class NeuralNetwork:
             return self.Layers
         return self.Layers[l]
 
+    def get_targets(self): 
+        return self.y_data
+
 
 @dataclass
 class TrainNetwork: 
-    nn: NeuralNetwork
+    nn: NeuralNetwork = field(repr=False)
+
+    t: np.ndarray = field(init=False, repr=False) # Targets
+    a_L: np.ndarray = field(init=False, repr=False) # Values frm output Layer 
+
+    def __post_init__(self):
+        self.t = self.nn.get_targets()
 
 
     def feed_forward(self):
@@ -191,7 +252,10 @@ class TrainNetwork:
             layer.feed_forward()
             output = layer.get_output()
 
-        return output
+        self.a_L = output
+
+    def back_propagation(self): 
+        pass
 
 
     
