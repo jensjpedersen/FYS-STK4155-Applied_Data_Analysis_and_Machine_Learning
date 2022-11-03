@@ -45,7 +45,7 @@ class Layer(abc.ABC):
         " Calculates ouput from layer "
 
     @abc.abstractmethod
-    def update_weights() -> None: 
+    def update_weights(eta: float, stdout=False) -> None: 
         """ Calculates derivate of cost function with respect to weigts and bias for current layer """
 
 
@@ -63,7 +63,7 @@ class InputLayer(Layer):
     prev_Layer = None
     next_Layer = object()
 
-    update: bool = None # True when layers is ready for update, else False
+    # update: bool = None # True when layers is ready for update, else False
 
     def __post_init__(self): 
         self.n_nodes = np.shape(self.X)[1]
@@ -75,10 +75,12 @@ class InputLayer(Layer):
         return self.X
 
     def feed_forward(self, stdout:bool = False):
-        pass
+        if stdout==True: 
+            print(f'  X: ({self.X.shape})')
 
-    def update_weights(self) -> None:
-        self.update = False
+    def update_weights(self, eta, stdout=False) -> None:
+        return
+        # self.update = False
 
     
 @dataclass
@@ -123,6 +125,46 @@ class HiddenLayer(Layer):
 
         if stdout == True: 
             print(f'z_l: ({z_l.shape}) = a_(l-1): ({output_prev_layer.shape}) @ W: ({self.W.shape}) + b: ({self.b.shape})')
+
+    def update_weights(self, eta: float, stdout: bool = False) -> None:
+        if self.update != True:
+            raise ValueError('Run method feed_forward, before atmepting to update weigts')
+        pass
+
+        # error = self.t - self.a_l
+        # gradient_weights = self.a_l.T @ error
+        # gradietn_bias = error
+
+        # delta = np.matmul(error_output, output_weights.T) * a_h * (1 - a_h)
+        # hidden_weights_gradient = np.matmul(X.T, delta)
+        # hidden_bias_gradient = np.sum(delta, axis=0)
+    
+        # error = 
+
+        #                                                   XXX: dot or matrix proudct 
+
+        # delta = self.derivative_activation * np.transpose(self.next_Layer.W) 
+        # delta_next = self.next_Layer.delta
+        delta = self.next_Layer.delta @ np.transpose(self.next_Layer.W) * self.derivative_activation
+        # gradient_weights = delta * self.prev_Layer.get_output() 
+        gradient_weights = np.transpose(self.prev_Layer.get_output()) @ delta
+        gradient_bias = np.sum(delta, axis = 0)
+
+        W_new = self.W - eta * gradient_weights
+        b_new = self.b - eta * gradient_bias
+
+        self.W = W_new
+        self.b = b_new
+        self.delta = delta
+
+        self.update = False
+        self.prev_Layer.update = True # Previous layer (l-1) is ready for update 
+
+        if stdout==True:
+            print(f'delta: ({delta.shape}) = next_Layer.delta: ({self.next_Layer.delta.shape}) @ transpose(next_Layer.W): ({np.transpose(self.next_Layer.W).shape}) * derivative_activation ({self.derivative_activation.shape})')
+            print(f'W_new: ({W_new.shape}) = W_old: ({self.W.shape}) - eta * gradient_weights: ({gradient_weights.shape})')
+            print(f'b_new: ({b_new.shape}) = b_old: ({self.b.shape}) - eta * gradient_weights: ({gradient_bias.shape})')
+
 
 @dataclass
 class OutputLayer(Layer):
@@ -171,7 +213,42 @@ class OutputLayer(Layer):
         if stdout == True: 
             print(f'z_l: ({z_l.shape}) = a_(l-1): ({output_prev_layer.shape}) @ W: ({self.W.shape}) + b: ({self.b.shape})')
 
-@dataclass 
+        self.update = True
+
+    def update_weights(self, eta: float, stdout: bool = False) -> None:
+        # TODO: need access to update sheme
+        if self.update != True:
+            raise ValueError('Run method feed_forward, before atmepting to update weigts')
+        pass
+        
+        # TODO: choise between cost function
+        # delta = self.t - self.a_l
+        grad_cost = grad(SE, 1)(self.a_l, self.t)
+        delta = self.derivative_activation * grad_cost 
+        gradient_weights = np.transpose(self.a_l) @ delta
+        gradient_bias = np.sum(delta, axis = 0)
+
+        # TODO: Update Weigts 
+        W_new = self.W - eta * gradient_weights
+        b_new = self.b - eta * gradient_bias
+
+        self.W = W_new
+        self.b = b_new
+        self.delta = delta
+
+        self.update = False
+        self.prev_Layer.update = True # Previous layer is ready for update
+
+        if stdout == True: 
+            print(f'delta: ({delta.shape}) = derivative_activation: ({self.derivative_activation.shape}) * grad_cost: ({grad_cost.shape})')
+            print(f'W_new: ({W_new.shape}) = W_old: ({self.W.shape}) - eta * gradient_weights: ({gradient_weights.shape})')
+            print(f'b_new: ({b_new.shape}) = b_old: ({self.b.shape}) - eta * gradient_weights: ({gradient_bias.shape})')
+        
+        
+
+
+
+@dataclass
 class NeuralNetwork:
     data_object: object 
     n_hidden_layers: int
@@ -203,9 +280,6 @@ class NeuralNetwork:
 
         # Init hidden layers
         for i in range(self.n_hidden_layers):
-            print(f'i = {i}')
-            print(f'selv.n_nodes_per_hidden_layer = {self.n_nodes_per_hidden_layer}')
-            
             self.Layers.append(HiddenLayer( self.n_nodes_per_hidden_layer))
 
         # self.Layers.append(OutputLayer( self.n_targets))
@@ -238,11 +312,21 @@ class NeuralNetwork:
 class TrainNetwork: 
     nn: NeuralNetwork = field(repr=False)
 
+    # Hyper parameters
+    eta: float # Learning rate
+
     t: np.ndarray = field(init=False, repr=False) # Targets
     a_L: np.ndarray = field(init=False, repr=False) # Values frm output Layer 
 
     def __post_init__(self):
         self.t = self.nn.get_targets()
+
+    def train(self, epochs: int): 
+        for i in range(epochs):
+            self.feed_forward()
+            self.back_propagation(self.eta)
+
+            print(i)
 
 
     def feed_forward(self):
@@ -254,8 +338,12 @@ class TrainNetwork:
 
         self.a_L = output
 
-    def back_propagation(self): 
-        pass
+    def back_propagation(self, eta):
+        layers = self.nn.get_layers()
+        eta = 0.001
+
+        for l in range(len(layers)-1, 0, -1): 
+            layers[l].update_weights(eta)
 
 
     
