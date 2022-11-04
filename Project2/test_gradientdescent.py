@@ -27,25 +27,53 @@ if __name__ == '__main__':
     
     gm = gradient_descent.GradientDescent(p)
 
-    gm.gd(eta, n_epochs)
+    # gm.gd(eta, n_epochs)
+    # gd_plain = gm.get_thetas()
+
+    # gm.gd(eta, n_epochs, momentum)
+    # # gm.gd(eta, n_epochs, 0.1) 
+    # gd_momentum = gm.get_thetas()
+
+    # gm.sgd( eta, n_epochs_sgd, size_batch)
+    # sgd = gm.get_thetas()
+
+    # gm.sgd( eta, n_epochs_sgd, size_batch, momentum)
+    # sgd_momentum = gm.get_thetas()
+
+    # # Plotting
+    # theta_dict = {'gd': gd_plain, 'gd_momentum': gd_momentum, 'sgd_theta': sgd, 'sgd_momentum': sgd_momentum}
+    # pl = plot.Plot(p)
+    # pl.plot_mse_vs_theta(theta_dict)
+
+
+#  ____                  _            _          _   _             
+# |  _ \ ___  __ _ _   _| | __ _ _ __(_)______ _| |_(_) ___  _ __  
+# | |_) / _ \/ _` | | | | |/ _` | '__| |_  / _` | __| |/ _ \| '_ \ 
+# |  _ <  __/ (_| | |_| | | (_| | |  | |/ / (_| | |_| | (_) | | | |
+# |_| \_\___|\__, |\__,_|_|\__,_|_|  |_/___\__,_|\__|_|\___/|_| |_|
+#            |___/                                                 
+
+    lamb = 0.1
+    # lamb = 0
+
+
+    gm.gd(eta, n_epochs, lamb=lamb)
     gd_plain = gm.get_thetas()
 
-    gm.gd(eta, n_epochs, momentum)
+    gm.gd(eta, n_epochs, momentum, lamb=lamb)
     # gm.gd(eta, n_epochs, 0.1) 
     gd_momentum = gm.get_thetas()
 
-    gm.sgd( eta, n_epochs_sgd, size_batch)
+    gm.sgd( eta, n_epochs_sgd, size_batch, lamb=lamb)
     sgd = gm.get_thetas()
 
-    gm.sgd( eta, n_epochs_sgd, size_batch, momentum)
+    gm.sgd( eta, n_epochs_sgd, size_batch, momentum, lamb=lamb)
     sgd_momentum = gm.get_thetas()
 
     # Plotting
     theta_dict = {'gd': gd_plain, 'gd_momentum': gd_momentum, 'sgd_theta': sgd, 'sgd_momentum': sgd_momentum}
     pl = plot.Plot(p)
     pl.plot_mse_vs_theta(theta_dict)
-
-
 
 
 

@@ -8,7 +8,11 @@ import numpy as np
 import pprint
 import time
 import neural_network
+import scores
 from importlib import reload
+import logging
+import activation
+
 
 def test_layers(nn: neural_network.NeuralNetwork):
     ' Check that layers are linked correct '
@@ -34,7 +38,19 @@ def test_feed_forward(nn: neural_network):
     " Prints size of matrices " 
     layers = nn.get_layers()
     for l, layer in enumerate(layers): 
+        print(f'=============== FF Layer {l} ==================')
         layer.feed_forward(stdout=True)
+
+def test_back_propagation(nn: neural_network):
+    layers = nn.get_layers()
+    eta = 0.001
+
+    # for l, layer in enumerate(layers): 
+    #     layer.feed_forward()
+
+    for l in range(len(layers)-1, 0, -1): 
+        print(f'=============== BP Layer {l} ==================')
+        layers[l].update_weights(eta, stdout=True)
 
 
 
@@ -43,30 +59,54 @@ def test_feed_forward(nn: neural_network):
     
 
 if __name__ == '__main__':
+
+
     reload(neural_network)
-
     reload(poly_data)
-    p = poly_data.PolyData(n_data=100)
+    reload(scores)
+    reload(activation)
 
-    depth = 2
-    width = 20
-    n_targets = 3
-    nn = neural_network.NeuralNetwork(p, depth, width, n_targets)
+    np.random.seed(0)
 
-    l1 = nn.get_layers(0)
-    l1.feed_forward()
-    l2 = nn.get_layers(1)
-    l2.feed_forward()
-    l3 = nn.get_layers(2)
-    l3.feed_forward()
-    l4 = nn.get_layers(3)
-    l4.feed_forward()
+    p = poly_data.PolyData(n_data=1000)
 
-    l4.update_weights()
+    # eta = 0.0001
+    eta = 0.0001
+    # depth = 1 
+    # width = 20
 
-    test_feed_forward(nn)
-    # tn = neural_network.TrainNetwork(nn)
-    # tn.feed_forward()
+    depth = 1 
+    width = 5
+    n_output_nodes = 1
+    cost_score = 'mse'
+    activation_hidden = 'sigmoid'
+    activation_output = 'none'
+
+    nn = neural_network.NeuralNetwork(p, depth, width, n_output_nodes, cost_score, activation_hidden, activation_output)
+
+    # test_feed_forward(nn)
+    # test_back_propagation(nn)
+
+    tn = neural_network.TrainNetwork(nn, eta)
+    # tn.train(1000)
+    tn.train(1000)
+
+    p.get_X_trian()
+
+    x = p.get_X_trian()[:,1]
+
+    t = tn.get_targets()
+    y = tn.get_output()
+    plt.scatter(x, y, label='y')
+    plt.scatter(x, t, label='t')
+    plt.legend()
+    plt.show()
+
+
+
+    # output1 = tn.get_output()
+    # tn.train(100)
+    # output100 = tn.get_output()
 
     
 

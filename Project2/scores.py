@@ -31,7 +31,12 @@ class Scores:
     def MSE(self, y, t):
         """ Squared error cost function""" # XXX: removed 1/2
         # assert(len(y.shape) == 1)
-        return 1/2 * jnp.sum((y - t)**2)
+        return 1/2 * np.sum((t - y)**2)
+
+    # def MSE(self, y, t):
+    #     """ Squared error cost function""" # XXX: removed 1/2
+    #     # assert(len(y.shape) == 1)
+    #     # return 1/2 * jnp.sum((t - y)**2)
 
 
     def get_score(self): 
@@ -42,8 +47,9 @@ class Scores:
 
     def get_derivative(self): 
         if self.score_name == 'mse': 
-            return grad(self.MSE, 1)(self.a_L, self.t) # XXX: 0 is correct?
-            # return grad(MSE, 1)(self.a_L, self.t) # XXX: 0 is correct?
+            # return grad(self.MSE, 1)(self.a_L, self.t) # XXX: 0 is correct?
+            # return grad(self.MSE, 1)(self.a_L, self.t) # XXX: 0 is correct?
+            return self.a_L - self.t
         else:
             raise ValueError('Allowed opitons for score_name is: {self.options}')
 

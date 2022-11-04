@@ -10,22 +10,39 @@ import pprint
 import time
 import jax.numpy as jnp 
 from jax import grad
+import scores
+from importlib import reload
+import logging
+from rich.logging import RichHandler
+import activation 
+reload(scores)
 
-def SE(y, t):
-    """ Squared error cost function""" # XXX: removed 1/2
-    # assert(len(y.shape) == 1)
-    return jnp.sum((t - y)**2)
+logging.basicConfig(format='%(message)s', filename='./flow.log', encoding='utf-8', level=logging.DEBUG, force=True)
+# logging.getLogger('parso.python.diff').setLevel('INFO') 
+
+# FORMAT = "%(message)s"
+# # logging.basicConfig(
+# #     filename=level=logging.DEBUG, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+# # )
+# log = logging.getLogger("rich")
+# log.info("Hello, World!")
+
+
+# def SE(y, t):
+#     """ Squared error cost function""" # XXX: removed 1/2
+#     # assert(len(y.shape) == 1)
+#     return jnp.sum((t - y)**2)
 
 def costRidge(y, t, lamb): 
     # assert(len(y.shape) == 1)
     return jnp.sum((t - y)**2) + lamb * np.sum(y**2)
 
-def sigmoid(x):
-    return 1/(1 + jnp.exp(-x))
+# def sigmoid(x):
+#     return 1/(1 + jnp.exp(-x))
 
-def derivative_sigmoid(sigm): 
-    """ Input values gotten from sigmoid funcitno """
-    return sigm * (1 - sigm)
+# def derivative_sigmoid(sigm): 
+#     """ Input values gotten from sigmoid funcitno """
+#     return sigm * (1 - sigm)
 
 
 # TODO: incremental id
@@ -75,11 +92,13 @@ class InputLayer(Layer):
         return self.X
 
     def feed_forward(self, stdout:bool = False):
-        if stdout==True: 
-            print(f'  X: ({self.X.shape})')
+        logging.info('================== InputLayer.feed_forward ===============')
+
+        logging.info(f'  X: ({self.X.shape})')
 
     def update_weights(self, eta, stdout=False) -> None:
-        return
+        logging.info('=============== InputLayer.update_weights ===============')
+        # Hidd # TODO: logging
         # self.update = False
 
     
@@ -112,21 +131,26 @@ class HiddenLayer(Layer):
 
         return self.a_l
 
-    def feed_forward(self, stdout: bool = False) -> None:
+    def feed_forward(self, activation_function: str) -> None:
+        logging.info('=============== HiddenLayer.feed_forward ===============')
         output_prev_layer = self.prev_Layer.get_output()
         z_l = output_prev_layer @ self.W + self.b # Feed forward
 
         # TODO: differnet activation function
         # If activation == 'sigmoid'
-        a_l = sigmoid(z_l)  # Activation func
-        self.a_l = a_l
-        self.derivative_activation = derivative_sigmoid(a_l) # Calculate derivate of sigmoid funciton
 
+        sigma = activation.Activation(z_l, activation_function)
+        self.a_l, self.derivative_activation = sigma.get_values()
+        # a_l = sigmoid(z_l)  # Activation func
+        # self.a_l = a_l
+        # self.derivative_activation = derivative_sigmoid(a_l) # Calculate derivate of sigmoid funciton
 
-        if stdout == True: 
-            print(f'z_l: ({z_l.shape}) = a_(l-1): ({output_prev_layer.shape}) @ W: ({self.W.shape}) + b: ({self.b.shape})')
+        logging.info(f'z_l: ({z_l.shape}) = a_(l-1): ({output_prev_layer.shape}) @ W: ({self.W.shape}) + b: ({self.b.shape})')
+        logging.info(f'W = {self.W}')
+        logging.info(f'b = {self.b}')
 
     def update_weights(self, eta: float, stdout: bool = False) -> None:
+        logging.info('=============== HiddenLayer.update_weights ===============')
         if self.update != True:
             raise ValueError('Run method feed_forward, before atmepting to update weigts')
         pass
@@ -150,6 +174,7 @@ class HiddenLayer(Layer):
         gradient_weights = np.transpose(self.prev_Layer.get_output()) @ delta
         gradient_bias = np.sum(delta, axis = 0)
 
+
         W_new = self.W - eta * gradient_weights
         b_new = self.b - eta * gradient_bias
 
@@ -160,16 +185,19 @@ class HiddenLayer(Layer):
         self.update = False
         self.prev_Layer.update = True # Previous layer (l-1) is ready for update 
 
-        if stdout==True:
-            print(f'delta: ({delta.shape}) = next_Layer.delta: ({self.next_Layer.delta.shape}) @ transpose(next_Layer.W): ({np.transpose(self.next_Layer.W).shape}) * derivative_activation ({self.derivative_activation.shape})')
-            print(f'W_new: ({W_new.shape}) = W_old: ({self.W.shape}) - eta * gradient_weights: ({gradient_weights.shape})')
-            print(f'b_new: ({b_new.shape}) = b_old: ({self.b.shape}) - eta * gradient_weights: ({gradient_bias.shape})')
+        logging.info(f'delta: ({delta.shape}) = next_Layer.delta: ({self.next_Layer.delta.shape}) @ transpose(next_Layer.W): ({np.transpose(self.next_Layer.W).shape}) * derivative_activation ({self.derivative_activation.shape})')
+        logging.info(f'W_new: ({W_new.shape}) = W_old: ({self.W.shape}) - eta * gradient_weights: ({gradient_weights.shape})')
+        logging.info(f'b_new: ({b_new.shape}) = b_old: ({self.b.shape}) - eta * gradient_weights: ({gradient_bias.shape})')
+        # logging.info(f'W_new = {W_new}')
+        # logging.info(f'b_new = {b_new}')
+
 
 
 @dataclass
 class OutputLayer(Layer):
     t: np.ndarray = field(repr=False) # Targets
     n_nodes: int # n_nodes = n_targets
+    score: str
 
     W: np.ndarray = field(init=False, repr=False)
     b: np.ndarray = field(init=False, repr=False)
@@ -198,6 +226,7 @@ class OutputLayer(Layer):
         return self.a_l
 
     def feed_forward(self, stdout: bool = False) -> None:
+        logging.info('=============== OutputLayer.feed_forward ===============')
         if self.update == True: 
             raise ValueError('Network is ready for update. Run method update_weights before next iteration')
 
@@ -206,16 +235,25 @@ class OutputLayer(Layer):
 
         # TODO: option for activation function
         # Sigmoid as activation function for output layer
-        a_l = sigmoid(z_l)  # Activation func
-        self.derivative_activation = derivative_sigmoid(a_l)
+        activation = 'none' # FIXME
+        if activation == 'sigmoid':
+            a_l = sigmoid(z_l)  # Activation func
+            self.derivative_activation = derivative_sigmoid(a_l)
+        else:
+            a_l = z_l
+            self.derivative_activation = np.ones_like(a_l) # FIXME
+            # self.derivative_activation = 1 # FIXME
+
         self.a_l = a_l
 
-        if stdout == True: 
-            print(f'z_l: ({z_l.shape}) = a_(l-1): ({output_prev_layer.shape}) @ W: ({self.W.shape}) + b: ({self.b.shape})')
+        logging.info(f'z_l: ({z_l.shape}) = a_(l-1): ({output_prev_layer.shape}) @ W: ({self.W.shape}) + b: ({self.b.shape})')
+        logging.info(f'W = {self.W}')
+        logging.info(f'b = {self.b}')
 
         self.update = True
 
     def update_weights(self, eta: float, stdout: bool = False) -> None:
+        logging.info('=============== OutputLayer.update_weights ===============')
         # TODO: need access to update sheme
         if self.update != True:
             raise ValueError('Run method feed_forward, before atmepting to update weigts')
@@ -223,7 +261,17 @@ class OutputLayer(Layer):
         
         # TODO: choise between cost function
         # delta = self.t - self.a_l
-        grad_cost = grad(SE, 1)(self.a_l, self.t)
+        # print('Should eror')
+        # if self.score == 'mse': 
+
+        # grad_cost = grad(SE, 1)(self.a_l, self.t)
+
+        sc = scores.Scores(self.a_l, self.t, self.score)  # Error are handled in Scores class
+        # grad_cost = sc.get_score() # XXX OlD returns scalar
+        grad_cost = sc.get_derivative()
+
+
+
         delta = self.derivative_activation * grad_cost 
         gradient_weights = np.transpose(self.a_l) @ delta
         gradient_bias = np.sum(delta, axis = 0)
@@ -232,6 +280,9 @@ class OutputLayer(Layer):
         W_new = self.W - eta * gradient_weights
         b_new = self.b - eta * gradient_bias
 
+        # print(W_new)
+        # print(b_new)
+
         self.W = W_new
         self.b = b_new
         self.delta = delta
@@ -239,10 +290,11 @@ class OutputLayer(Layer):
         self.update = False
         self.prev_Layer.update = True # Previous layer is ready for update
 
-        if stdout == True: 
-            print(f'delta: ({delta.shape}) = derivative_activation: ({self.derivative_activation.shape}) * grad_cost: ({grad_cost.shape})')
-            print(f'W_new: ({W_new.shape}) = W_old: ({self.W.shape}) - eta * gradient_weights: ({gradient_weights.shape})')
-            print(f'b_new: ({b_new.shape}) = b_old: ({self.b.shape}) - eta * gradient_weights: ({gradient_bias.shape})')
+        logging.info(f'delta: ({delta.shape}) = derivative_activation: ({self.derivative_activation.shape}) * grad_cost: ({grad_cost.shape})')
+        logging.info(f'W_new: ({W_new.shape}) = W_old: ({self.W.shape}) - eta * gradient_weights: ({gradient_weights.shape})')
+        logging.info(f'b_new: ({b_new.shape}) = b_old: ({self.b.shape}) - eta * gradient_weights: ({gradient_bias.shape})')
+        # logging.info(f'W_new = {W_new}')
+        # logging.info(f'b_new = {b_new}')
         
         
 
@@ -250,11 +302,17 @@ class OutputLayer(Layer):
 
 @dataclass
 class NeuralNetwork:
+    """ Class with the basic arcithecture of the Network """
     data_object: object 
     n_hidden_layers: int
     n_nodes_per_hidden_layer: int
     # n_targets: int = field(init=False)
     n_output_nodes: int
+
+    cost_score: str
+
+    activation_hidden: str  # TODO
+    activation_output: str  # TODO
 
     n_features: int = field(init=False)
     n_data: int = field(init=False)
@@ -282,9 +340,9 @@ class NeuralNetwork:
         for i in range(self.n_hidden_layers):
             self.Layers.append(HiddenLayer( self.n_nodes_per_hidden_layer))
 
-        # self.Layers.append(OutputLayer( self.n_targets))
+        # Init ouput layer
         targets = self.y_data
-        self.Layers.append(OutputLayer(targets, self.n_output_nodes))
+        self.Layers.append(OutputLayer(targets, self.n_output_nodes, self.cost_score))
 
         # Connect layers
         for i, Layer in enumerate(self.Layers):
@@ -310,6 +368,11 @@ class NeuralNetwork:
 
 @dataclass
 class TrainNetwork: 
+    """ Class used to train the network
+    parameters:
+        nn: NeuralNetwork object - Contains the arcithecture of the network
+        op: Optimizer object - Contains shemes (gradient methods, etc.) for updateing weigts and biases 
+    """
     nn: NeuralNetwork = field(repr=False)
 
     # Hyper parameters
@@ -319,31 +382,49 @@ class TrainNetwork:
     a_L: np.ndarray = field(init=False, repr=False) # Values frm output Layer 
 
     def __post_init__(self):
+        logging.info('=============== INIT NN ===============')
         self.t = self.nn.get_targets()
 
     def train(self, epochs: int): 
         for i in range(epochs):
             self.feed_forward()
-            self.back_propagation(self.eta)
+            self.back_propagation()
 
-            print(i)
-
+            # print(i)
+            print(self.get_score())
 
     def feed_forward(self):
         layers = self.nn.get_layers()
 
         for l, layer in enumerate(layers):
-            layer.feed_forward()
+            if isinstance(layer, HiddenLayer):
+                layer.feed_forward(self.nn.activation_hidden)
+            elif isinstance(layer, OutputLayer):
+                layer.feed_forward(self.nn.activation_output)
+
+            # print(type(layer))
             output = layer.get_output()
+            
 
         self.a_L = output
 
-    def back_propagation(self, eta):
+    def back_propagation(self):
         layers = self.nn.get_layers()
-        eta = 0.001
-
         for l in range(len(layers)-1, 0, -1): 
-            layers[l].update_weights(eta)
+            layers[l].update_weights(self.eta)
+
+    def get_output(self):
+        try: 
+            return self.a_L
+        except AttributeError: 
+            raise AttributeError('Use method "train" to create output variable (a_L)') 
+
+    def get_score(self):
+        sc = scores.Scores(self.a_L, self.t, self.nn.cost_score)
+        return sc.get_score()
+
+    def get_targets(self):
+        return self.t
 
 
     

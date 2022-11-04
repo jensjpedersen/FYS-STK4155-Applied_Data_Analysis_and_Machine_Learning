@@ -11,5 +11,5 @@ if __name__ == '__main__':
 
     x = np.linspace(-10, 5, 100)
 
-    af = activation.Activation(x)
+    af = activation.Activation(x, 'sigmoid')
     vals, der = af.get_values()
