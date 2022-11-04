@@ -25,8 +25,9 @@ class Scores:
     options: list = field(init=False, default_factory=lambda: ['mse'])
 
 
-    def __post_init(self):
+    def __post_init__(self):
         assert(self.score_name in self.options)
+        assert(self.a_L.shape == self.t.shape)
 
     def MSE(self, y, t):
         """ Squared error cost function""" # XXX: removed 1/2

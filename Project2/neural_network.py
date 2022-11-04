@@ -13,9 +13,7 @@ from jax import grad
 import scores
 from importlib import reload
 import logging
-from rich.logging import RichHandler
 import activation 
-reload(scores)
 
 logging.basicConfig(format='%(message)s', filename='./flow.log', encoding='utf-8', level=logging.DEBUG, force=True)
 # logging.getLogger('parso.python.diff').setLevel('INFO') 
@@ -324,6 +322,13 @@ class NeuralNetwork:
     def __post_init__(self):
         self.X_data, self.y_data = self.data_object.get_train()
 
+        if len(X_data.shape) == 1:
+            X_data = X_data[:,np.newaxis]
+
+        if len(y_data.shape) == 1:
+            y_data = y_data[:,np.newaxis]
+
+        self.X_data, self.y_data = X_data, y_data
         self.n_features = self.X_data.shape[1]
         self.n_data = self.X_data.shape[0]
 
