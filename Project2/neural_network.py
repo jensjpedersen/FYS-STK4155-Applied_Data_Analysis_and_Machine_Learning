@@ -149,25 +149,9 @@ class HiddenLayer(Layer):
             raise ValueError('Run method feed_forward, before atmepting to update weigts')
         pass
 
-        # error = self.t - self.a_l
-        # gradient_weights = self.a_l.T @ error
-        # gradietn_bias = error
-
-        # delta = np.matmul(error_output, output_weights.T) * a_h * (1 - a_h)
-        # hidden_weights_gradient = np.matmul(X.T, delta)
-        # hidden_bias_gradient = np.sum(delta, axis=0)
-    
-        # error = 
-
-        #                                                   XXX: dot or matrix proudct 
-
-        # delta = self.derivative_activation * np.transpose(self.next_Layer.W) 
-        # delta_next = self.next_Layer.delta
         delta = self.next_Layer.delta @ np.transpose(self.next_Layer.W) * self.derivative_activation
-        # gradient_weights = delta * self.prev_Layer.get_output() 
         gradient_weights = np.transpose(self.prev_Layer.get_output()) @ delta
         gradient_bias = np.sum(delta, axis = 0)
-
 
         W_new = self.W - eta * gradient_weights
         b_new = self.b - eta * gradient_bias
@@ -278,7 +262,9 @@ class OutputLayer(Layer):
 @dataclass
 class NeuralNetwork:
     """ Class with the basic arcithecture of the Network """
-    data_object: object 
+    X_data: np.ndarray = field(repr=False)
+    y_data: np.ndarray = field(repr=False)
+
     n_hidden_layers: int
     n_nodes_per_hidden_layer: int
     # n_targets: int = field(init=False)
@@ -292,12 +278,9 @@ class NeuralNetwork:
     n_features: int = field(init=False)
     n_data: int = field(init=False)
 
-    X_data: np.ndarray = field(init=False, repr=False)
-    y_data: np.ndarray = field(init=False, repr=False)
-
     Layers: Layer = field(default_factory=lambda: [])
     def __post_init__(self):
-        X_data, y_data = self.data_object.get_train()
+        X_data, y_data = self.X_data, self.y_data
 
         if len(X_data.shape) == 1:
             X_data = X_data[:,np.newaxis]
@@ -356,10 +339,10 @@ class TrainNetwork:
         op: Optimizer object - Contains shemes (gradient methods, etc.) for updateing weigts and biases 
     """
     nn: NeuralNetwork
-    op: Optimizer
+    # op: Optimizer
 
     # Hyper parameters
-    gradient_method: str # sdg or gd 
+    # gradient_method: str # sdg or gd 
     eta: float # Learning rate
 
     t: np.ndarray = field(init=False, repr=False) # Targets
