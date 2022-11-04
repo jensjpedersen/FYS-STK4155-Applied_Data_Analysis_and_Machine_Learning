@@ -21,24 +21,16 @@ class Scores:
     """
     a_L: np.ndarray = field(repr=False) # Ouput from output layer
     t: np.ndarray = field(repr=False) # Targets
-    score_name: str = 'mse'
+    score_name: str
     options: list = field(init=False, default_factory=lambda: ['mse'])
-
 
     def __post_init__(self):
         assert(self.score_name in self.options)
         assert(self.a_L.shape == self.t.shape)
 
     def MSE(self, y, t):
-        """ Squared error cost function""" # XXX: removed 1/2
-        # assert(len(y.shape) == 1)
+        """ Squared error cost function""" # XXX: removed 1/n
         return 1/2 * np.sum((t - y)**2)
-
-    # def MSE(self, y, t):
-    #     """ Squared error cost function""" # XXX: removed 1/2
-    #     # assert(len(y.shape) == 1)
-    #     # return 1/2 * jnp.sum((t - y)**2)
-
 
     def get_score(self): 
         if self.score_name == 'mse': 
@@ -48,8 +40,6 @@ class Scores:
 
     def get_derivative(self): 
         if self.score_name == 'mse': 
-            # return grad(self.MSE, 1)(self.a_L, self.t) # XXX: 0 is correct?
-            # return grad(self.MSE, 1)(self.a_L, self.t) # XXX: 0 is correct?
             return self.a_L - self.t
         else:
             raise ValueError('Allowed opitons for score_name is: {self.options}')
