@@ -134,14 +134,9 @@ class HiddenLayer(Layer):
         output_prev_layer = self.prev_Layer.get_output()
         z_l = output_prev_layer @ self.W + self.b # Feed forward
 
-        # TODO: differnet activation function
-        # If activation == 'sigmoid'
-
+        # Choose activation func
         sigma = activation.Activation(z_l, activation_function)
         self.a_l, self.derivative_activation = sigma.get_values()
-        # a_l = sigmoid(z_l)  # Activation func
-        # self.a_l = a_l
-        # self.derivative_activation = derivative_sigmoid(a_l) # Calculate derivate of sigmoid funciton
 
         logging.info(f'z_l: ({z_l.shape}) = a_(l-1): ({output_prev_layer.shape}) @ W: ({self.W.shape}) + b: ({self.b.shape})')
         logging.info(f'W = {self.W}')
@@ -223,26 +218,17 @@ class OutputLayer(Layer):
 
         return self.a_l
 
-    def feed_forward(self, stdout: bool = False) -> None:
+    def feed_forward(self, activation_output: str) -> None:
         logging.info('=============== OutputLayer.feed_forward ===============')
         if self.update == True: 
             raise ValueError('Network is ready for update. Run method update_weights before next iteration')
 
         output_prev_layer = self.prev_Layer.get_output()
         z_l = output_prev_layer @ self.W + self.b # Feed forward
-
-        # TODO: option for activation function
-        # Sigmoid as activation function for output layer
-        activation = 'none' # FIXME
-        if activation == 'sigmoid':
-            a_l = sigmoid(z_l)  # Activation func
-            self.derivative_activation = derivative_sigmoid(a_l)
-        else:
-            a_l = z_l
-            self.derivative_activation = np.ones_like(a_l) # FIXME
-            # self.derivative_activation = 1 # FIXME
-
-        self.a_l = a_l
+        
+        # Choose activation function
+        ac = activation.Activation(z_l, activation_output)
+        self.a_l, self.derivative_activation = ac.get_values()
 
         logging.info(f'z_l: ({z_l.shape}) = a_(l-1): ({output_prev_layer.shape}) @ W: ({self.W.shape}) + b: ({self.b.shape})')
         logging.info(f'W = {self.W}')
@@ -320,7 +306,7 @@ class NeuralNetwork:
 
     Layers: Layer = field(default_factory=lambda: [])
     def __post_init__(self):
-        self.X_data, self.y_data = self.data_object.get_train()
+        X_data, y_data = self.data_object.get_train()
 
         if len(X_data.shape) == 1:
             X_data = X_data[:,np.newaxis]
