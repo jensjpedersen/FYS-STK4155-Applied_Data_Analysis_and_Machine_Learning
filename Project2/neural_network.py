@@ -16,6 +16,7 @@ import logging
 import activation 
 
 logging.basicConfig(format='%(message)s', filename='./flow.log', encoding='utf-8', level=logging.DEBUG, force=True)
+logging.getLogger().disabled = True
 # logging.getLogger('parso.python.diff').setLevel('INFO') 
 
 # FORMAT = "%(message)s"
@@ -242,25 +243,15 @@ class OutputLayer(Layer):
         if self.update != True:
             raise ValueError('Run method feed_forward, before atmepting to update weigts')
         pass
-        
-        # TODO: choise between cost function
-        # delta = self.t - self.a_l
-        # print('Should eror')
-        # if self.score == 'mse': 
-
-        # grad_cost = grad(SE, 1)(self.a_l, self.t)
 
         sc = scores.Scores(self.a_l, self.t, self.score)  # Error are handled in Scores class
-        # grad_cost = sc.get_score() # XXX OlD returns scalar
         grad_cost = sc.get_derivative()
-
-
 
         delta = self.derivative_activation * grad_cost 
         gradient_weights = np.transpose(self.a_l) @ delta
         gradient_bias = np.sum(delta, axis = 0)
 
-        # TODO: Update Weigts 
+        # TODO: Update sheme
         W_new = self.W - eta * gradient_weights
         b_new = self.b - eta * gradient_bias
 
@@ -364,9 +355,11 @@ class TrainNetwork:
         nn: NeuralNetwork object - Contains the arcithecture of the network
         op: Optimizer object - Contains shemes (gradient methods, etc.) for updateing weigts and biases 
     """
-    nn: NeuralNetwork = field(repr=False)
+    nn: NeuralNetwork
+    op: Optimizer
 
     # Hyper parameters
+    gradient_method: str # sdg or gd 
     eta: float # Learning rate
 
     t: np.ndarray = field(init=False, repr=False) # Targets
@@ -378,28 +371,23 @@ class TrainNetwork:
 
     def train(self, epochs: int): 
         for i in range(epochs):
-            self.feed_forward()
-            self.back_propagation()
+            self.__feed_forward()
+            self.__back_propagation()
 
             # print(i)
             print(self.get_score())
 
-    def feed_forward(self):
+    def __feed_forward(self):
         layers = self.nn.get_layers()
+        for l in range(len(layers)-1): 
+            layers[l].feed_forward(self.nn.activation_hidden)
 
-        for l, layer in enumerate(layers):
-            if isinstance(layer, HiddenLayer):
-                layer.feed_forward(self.nn.activation_hidden)
-            elif isinstance(layer, OutputLayer):
-                layer.feed_forward(self.nn.activation_output)
-
-            # print(type(layer))
-            output = layer.get_output()
-            
-
+        assert(isinstance(layers[l+1], OutputLayer))
+        layers[l+1].feed_forward(self.nn.activation_output)
+        output = layers[l+1].get_output()
         self.a_L = output
 
-    def back_propagation(self):
+    def __back_propagation(self):
         layers = self.nn.get_layers()
         for l in range(len(layers)-1, 0, -1): 
             layers[l].update_weights(self.eta)
