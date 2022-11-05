@@ -20,6 +20,8 @@ class Optimizer:
     W_change: np.ndarray = field(init=False, default=None) # Previous change in weights
     b_change: np.ndarray = field(init=False, default=None) # Previous change in bias
 
+    number_of_updates: int = 0
+
     def __post_init__(self): 
 
         if self.gamma != None:
@@ -30,6 +32,7 @@ class Optimizer:
 
 
     def update_change(self, gradient_weights, gradient_bias) -> tuple[np.ndarray, np.ndarray]:
+        self.number_of_updates += 1
 
         # TODO: Update sheme
         if self.gamma != None: 

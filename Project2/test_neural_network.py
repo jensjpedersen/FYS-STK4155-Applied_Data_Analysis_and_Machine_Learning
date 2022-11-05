@@ -86,7 +86,9 @@ if __name__ == '__main__':
     nn = neural_network.NeuralNetwork( X_data, y_data, depth, width, n_output_nodes, cost_score, activation_hidden, activation_output)
 
 
-    op = optimizer.Optimizer(eta, 'gd')
+    gamma = 0
+    op = optimizer.Optimizer(eta, 'gd', gamma)
+    # op = optimizer.Optimizer(eta, 'gd')
 
     tn = neural_network.TrainNetwork(nn, op)
 

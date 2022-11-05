@@ -15,6 +15,7 @@ from importlib import reload
 import logging
 import activation 
 import optimizer
+import copy
 
 logging.basicConfig(format='%(message)s', filename='./flow.log', encoding='utf-8', level=logging.DEBUG, force=True)
 logging.getLogger().disabled = True
@@ -62,7 +63,7 @@ class Layer(abc.ABC):
         " Calculates ouput from layer "
 
     @abc.abstractmethod
-    def update_weights(eta: float, stdout=False) -> None: 
+    def update_weights(initial_optimizer_ob: optimizer.Optimizer) -> None: 
         """ Calculates derivate of cost function with respect to weigts and bias for current layer """
 
 
@@ -87,6 +88,9 @@ class InputLayer(Layer):
 
     def init_bias_and_weigths(self):
         pass
+
+    def set_optimizer(self, op: optimizer.Optimizer): 
+        return
 
     def get_output(self): 
         return self.X
@@ -120,10 +124,18 @@ class HiddenLayer(Layer):
     derivative_activation: np.ndarray = field(init=False, repr=False) # Derivative of activation function with respect to z^l
     delta: np.ndarray = field(init=False, repr=False) # Derivate of Cost with respect to bias
 
+    op: optimizer.Optimizer = field(init=False, default=None)
+
     def init_bias_and_weigths(self):
         # TODO: check if prev layer is Initialized
         self.b = np.zeros(self.n_nodes) + 0.01
         self.W = np.random.randn(self.prev_Layer.n_nodes, self.n_nodes)
+
+    # def set_optimizer(self, op: optimizer.Optimizer): 
+    #     if self.op != None: 
+    #         raise AttributeError('Optimizer object is already initialized')
+
+    #     self.op = op 
 
     def get_output(self):
         if np.size(self.a_l) == 1: 
@@ -144,18 +156,22 @@ class HiddenLayer(Layer):
         logging.info(f'W = {self.W}')
         logging.info(f'b = {self.b}')
 
-    def update_weights(self, op: optimizer.Optimizer) -> None:
+    def update_weights(self, initial_optimizer_ob: optimizer.Optimizer) -> None:
         logging.info('=============== HiddenLayer.update_weights ===============')
         if self.update != True:
             raise ValueError('Run method feed_forward, before atmepting to update weigts')
         pass
+
+        if self.op == None: 
+            assert(isinstance(initial_optimizer_ob, optimizer.Optimizer))
+            self.op = copy.deepcopy(initial_optimizer_ob)
 
         delta = self.next_Layer.delta @ np.transpose(self.next_Layer.W) * self.derivative_activation
         gradient_weights = np.transpose(self.prev_Layer.get_output()) @ delta
         gradient_bias = np.sum(delta, axis = 0)
 
         # Use optimizer class to find new change
-        W_change, b_change = op.update_change(gradient_weights, gradient_bias)
+        W_change, b_change = self.op.update_change(gradient_weights, gradient_bias)
 
         W_new = self.W - W_change
         b_new = self.b - b_change
@@ -192,6 +208,7 @@ class OutputLayer(Layer):
     a_l: np.ndarray = field(repr=False, default=None) # output from Activation function. Size (n nodes in layer l-) x (n_data)
                            # Initialize varablie with method: feed_forward
     # def __post_init__(self):
+    op: optimizer.Optimizer = field(init=False, default=None)
 
     def __post_init__(self):
         if len(self.t.shape) == 1:
@@ -200,6 +217,12 @@ class OutputLayer(Layer):
     def init_bias_and_weigths(self): 
         self.b = np.zeros(self.n_nodes) + 0.01
         self.W = np.random.randn(self.prev_Layer.n_nodes, self.n_nodes)
+
+    # def set_optimizer(self, op: optimizer.Optimizer): 
+    #     if self.op != None: 
+    #         raise AttributeError('Optimizer object is already initialized')
+
+    #     self.op = op 
 
     def get_output(self):
         if np.size(self.a_l) == 1: 
@@ -225,11 +248,16 @@ class OutputLayer(Layer):
 
         self.update = True
 
-    def update_weights(self, op: optimizer.Optimizer) -> None:
+    def update_weights(self, initial_optimizer_ob: optimizer.Optimizer) -> None:
+
         logging.info('=============== OutputLayer.update_weights ===============')
         # TODO: need access to update sheme
         if self.update != True:
             raise ValueError('Run method feed_forward, before atmepting to update weigts')
+
+        if self.op == None: 
+            assert(isinstance(initial_optimizer_ob, optimizer.Optimizer))
+            self.op = copy.deepcopy(initial_optimizer_ob)
 
         sc = scores.Scores(self.a_l, self.t, self.score)  # Error are handled in Scores class
         grad_cost = sc.get_derivative()
@@ -240,7 +268,7 @@ class OutputLayer(Layer):
 
         # Pass gradient
         # Calcaulate change in optimizer object
-        W_change, b_change = op.update_change(gradient_weights, gradient_bias)
+        W_change, b_change = self.op.update_change(gradient_weights, gradient_bias)
 
         # FIXME: if no optimizer, maybe? 
         # W_change = eta * gradient_weights
