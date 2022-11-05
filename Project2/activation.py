@@ -41,7 +41,7 @@ class Activation:
         elif self.func_name == 'none': 
             # return self.z_l, np.ones_like(self.z_l)
             # return 1, 1
-            return self.z_l, 1
+            return self.z_l, np.ones_like(self.z_l)
         else:
             raise ValueError(f'Valid options for func_name are: {self.options}, got {self.func_name}')
 

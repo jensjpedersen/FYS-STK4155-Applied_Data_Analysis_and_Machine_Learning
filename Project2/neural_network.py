@@ -14,6 +14,7 @@ import scores
 from importlib import reload
 import logging
 import activation 
+import optimizer
 
 logging.basicConfig(format='%(message)s', filename='./flow.log', encoding='utf-8', level=logging.DEBUG, force=True)
 logging.getLogger().disabled = True
@@ -143,7 +144,7 @@ class HiddenLayer(Layer):
         logging.info(f'W = {self.W}')
         logging.info(f'b = {self.b}')
 
-    def update_weights(self, eta: float, stdout: bool = False) -> None:
+    def update_weights(self, op: optimizer.Optimizer) -> None:
         logging.info('=============== HiddenLayer.update_weights ===============')
         if self.update != True:
             raise ValueError('Run method feed_forward, before atmepting to update weigts')
@@ -153,8 +154,11 @@ class HiddenLayer(Layer):
         gradient_weights = np.transpose(self.prev_Layer.get_output()) @ delta
         gradient_bias = np.sum(delta, axis = 0)
 
-        W_new = self.W - eta * gradient_weights
-        b_new = self.b - eta * gradient_bias
+        # Use optimizer class to find new change
+        W_change, b_change = op.update_change(gradient_weights, gradient_bias)
+
+        W_new = self.W - W_change
+        b_new = self.b - b_change
 
         self.W = W_new
         self.b = b_new
@@ -221,12 +225,11 @@ class OutputLayer(Layer):
 
         self.update = True
 
-    def update_weights(self, eta: float, stdout: bool = False) -> None:
+    def update_weights(self, op: optimizer.Optimizer) -> None:
         logging.info('=============== OutputLayer.update_weights ===============')
         # TODO: need access to update sheme
         if self.update != True:
             raise ValueError('Run method feed_forward, before atmepting to update weigts')
-        pass
 
         sc = scores.Scores(self.a_l, self.t, self.score)  # Error are handled in Scores class
         grad_cost = sc.get_derivative()
@@ -235,9 +238,16 @@ class OutputLayer(Layer):
         gradient_weights = np.transpose(self.a_l) @ delta
         gradient_bias = np.sum(delta, axis = 0)
 
-        # TODO: Update sheme
-        W_new = self.W - eta * gradient_weights
-        b_new = self.b - eta * gradient_bias
+        # Pass gradient
+        # Calcaulate change in optimizer object
+        W_change, b_change = op.update_change(gradient_weights, gradient_bias)
+
+        # FIXME: if no optimizer, maybe? 
+        # W_change = eta * gradient_weights
+        # b_change = eta * gradient_bias
+
+        W_new = self.W - W_change
+        b_new = self.b - b_change
 
         # print(W_new)
         # print(b_new)
@@ -279,6 +289,7 @@ class NeuralNetwork:
     n_data: int = field(init=False)
 
     Layers: Layer = field(default_factory=lambda: [])
+    op: optimizer.Optimizer = field(init=False, default=None)
     def __post_init__(self):
         X_data, y_data = self.X_data, self.y_data
 
@@ -330,6 +341,12 @@ class NeuralNetwork:
     def get_targets(self): 
         return self.y_data
 
+    def set_optimizer(self, op: optimizer.Optimizer) -> None:
+        self.op = op
+
+    def get_optimizer(self) -> optimizer.Optimizer: 
+        return self.op
+
 
 @dataclass
 class TrainNetwork: 
@@ -339,11 +356,12 @@ class TrainNetwork:
         op: Optimizer object - Contains shemes (gradient methods, etc.) for updateing weigts and biases 
     """
     nn: NeuralNetwork
-    # op: Optimizer
+    op: optimizer.Optimizer
 
     # Hyper parameters
     # gradient_method: str # sdg or gd 
-    eta: float # Learning rate
+    # eta: float # Learning rate
+    # gamma: float = None
 
     t: np.ndarray = field(init=False, repr=False) # Targets
     a_L: np.ndarray = field(init=False, repr=False) # Values frm output Layer 
@@ -351,6 +369,10 @@ class TrainNetwork:
     def __post_init__(self):
         logging.info('=============== INIT NN ===============')
         self.t = self.nn.get_targets()
+        assert(self.nn.op == None)
+        self.nn.set_optimizer(self.op)
+        assert(self.nn.op != None)
+
 
     def train(self, epochs: int): 
         for i in range(epochs):
@@ -372,8 +394,10 @@ class TrainNetwork:
 
     def __back_propagation(self):
         layers = self.nn.get_layers()
+        op = self.op
         for l in range(len(layers)-1, 0, -1): 
-            layers[l].update_weights(self.eta)
+            layers[l].update_weights(op)
+            # XXX Optimizer needs update
 
     def get_output(self):
         try: 

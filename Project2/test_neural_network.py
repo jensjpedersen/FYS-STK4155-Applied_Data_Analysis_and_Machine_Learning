@@ -12,7 +12,8 @@ import scores
 from importlib import reload
 import logging
 import activation
-
+import time
+import optimizer
 
 def test_layers(nn: neural_network.NeuralNetwork):
     ' Check that layers are linked correct '
@@ -65,31 +66,34 @@ if __name__ == '__main__':
     reload(poly_data)
     reload(scores)
     reload(activation)
+    reload(optimizer)
 
     np.random.seed(0)
 
     p = poly_data.PolyData(n_data=1000)
 
-    # eta = 0.0001
+    # eta = 0.00001
     eta = 0.0001
-    # depth = 1 
-    # width = 20
-
     depth = 1 
-    width = 5
+    width = 5 
+
     n_output_nodes = 1
     cost_score = 'mse'
     activation_hidden = 'sigmoid'
     activation_output = 'none'
 
-    nn = neural_network.NeuralNetwork(p, depth, width, n_output_nodes, cost_score, activation_hidden, activation_output)
+    X_data, y_data = p.get_train()
+    nn = neural_network.NeuralNetwork( X_data, y_data, depth, width, n_output_nodes, cost_score, activation_hidden, activation_output)
 
-    # test_feed_forward(nn)
-    # test_back_propagation(nn)
 
-    tn = neural_network.TrainNetwork(nn, eta)
-    # tn.train(1000)
+    op = optimizer.Optimizer(eta, 'gd')
+
+    tn = neural_network.TrainNetwork(nn, op)
+
+    tic = time.perf_counter()
     tn.train(1000)
+    toc = time.perf_counter()
+    print(f'took: {toc-tic}')
 
     p.get_X_trian()
 
