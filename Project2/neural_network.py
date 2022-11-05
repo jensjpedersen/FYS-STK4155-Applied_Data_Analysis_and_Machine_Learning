@@ -194,9 +194,10 @@ class HiddenLayer(Layer):
 
 @dataclass
 class OutputLayer(Layer):
-    t: np.ndarray = field(repr=False) # Targets
     n_nodes: int # n_nodes = n_targets
     score: str
+
+    # t: np.ndarray = field(init=False, repr=False) # Targets
 
     W: np.ndarray = field(init=False, repr=False)
     b: np.ndarray = field(init=False, repr=False)
@@ -210,10 +211,6 @@ class OutputLayer(Layer):
                            # Initialize varablie with method: feed_forward
     # def __post_init__(self):
     op: optimizer.Optimizer = field(init=False, default=None)
-
-    def __post_init__(self):
-        if len(self.t.shape) == 1:
-            self.t = self.t[:,np.newaxis]
 
     def init_bias_and_weigths(self): 
         self.b = np.zeros(self.n_nodes) + 0.01
@@ -249,7 +246,7 @@ class OutputLayer(Layer):
 
         self.update = True
 
-    def update_weights(self, initial_optimizer_ob: optimizer.Optimizer) -> None:
+    def update_weights(self, initial_optimizer_ob: optimizer.Optimizer, targets: np.ndarray) -> None:
 
         logging.info('=============== OutputLayer.update_weights ===============')
         # TODO: need access to update sheme
@@ -260,7 +257,7 @@ class OutputLayer(Layer):
             assert(isinstance(initial_optimizer_ob, optimizer.Optimizer))
             self.op = copy.deepcopy(initial_optimizer_ob)
 
-        sc = scores.Scores(self.a_l, self.t, self.score)  # Error are handled in Scores class
+        sc = scores.Scores(self.a_l, targets, self.score)  # Error are handled in Scores class
         grad_cost = sc.get_derivative()
 
         delta = self.derivative_activation * grad_cost 
@@ -340,15 +337,14 @@ class NeuralNetwork:
 
         # Get input data
         n_features = self.X_data.shape[1]
-        self.Layers.append(InputLayer(n_features)) # XXX: remove x data
+        self.Layers.append(InputLayer(n_features)) 
 
         # Init hidden layers
         for i in range(self.n_hidden_layers):
             self.Layers.append(HiddenLayer( self.n_nodes_per_hidden_layer))
 
         # Init ouput layer
-        targets = self.y_data
-        self.Layers.append(OutputLayer(targets, self.n_output_nodes, self.cost_score))
+        self.Layers.append(OutputLayer(self.n_output_nodes, self.cost_score)) # XXX: remove cost score
 
         # Connect layers
         for i, Layer in enumerate(self.Layers):
@@ -428,9 +424,15 @@ class TrainNetwork:
         self.a_L = output
 
     def __back_propagation(self):
+        targets = self.nn.get_targets()  # XXX: Add as arg 
         layers = self.nn.get_layers()
         op = self.op
-        for l in range(len(layers)-1, 0, -1): 
+
+        # Update weigts output layer
+        assert(isinstance(layers[-1], OutputLayer))
+        layers[-1].update_weights(op, targets)
+
+        for l in range(len(layers)-2, 0, -1): 
             layers[l].update_weights(op)
             # XXX Optimizer needs update
 
