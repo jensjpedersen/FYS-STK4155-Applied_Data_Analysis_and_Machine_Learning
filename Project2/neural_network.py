@@ -70,8 +70,8 @@ class Layer(abc.ABC):
 
 @dataclass
 class InputLayer(Layer):
-    X: np.ndarray = field(repr=False)  # Desing matrix with size (n_data, n_features)
-    n_nodes: int = field(init=False) # n_nodes = n_features
+    n_nodes: int # n_nodes = n_features
+    X: np.ndarray = field(init=False, repr=False)  # Desing matrix with size (n_data, n_features)
 
     W = None
     b = None
@@ -83,8 +83,7 @@ class InputLayer(Layer):
 
     # update: bool = None # True when layers is ready for update, else False
 
-    def __post_init__(self): 
-        self.n_nodes = np.shape(self.X)[1]
+    # def __post_init__(self): 
 
     def init_bias_and_weigths(self):
         pass
@@ -95,8 +94,10 @@ class InputLayer(Layer):
     def get_output(self): 
         return self.X
 
-    def feed_forward(self, stdout:bool = False):
+    def feed_forward(self, X: np.ndarray):
         logging.info('================== InputLayer.feed_forward ===============')
+        self.X = X
+        # self.n_nodes = np.shape(self.X)[1]
 
         logging.info(f'  X: ({self.X.shape})')
 
@@ -329,7 +330,7 @@ class NeuralNetwork:
 
         self.X_data, self.y_data = X_data, y_data
         self.n_features = self.X_data.shape[1]
-        self.n_data = self.X_data.shape[0]
+        self.n_data = self.X_data.shape[0] # XXX: Problem ? 
 
         self.__init_layers()
 
@@ -338,7 +339,8 @@ class NeuralNetwork:
         # Init input layer
 
         # Get input data
-        self.Layers.append(InputLayer(self.X_data))
+        n_features = self.X_data.shape[1]
+        self.Layers.append(InputLayer(n_features)) # XXX: remove x data
 
         # Init hidden layers
         for i in range(self.n_hidden_layers):
@@ -411,8 +413,13 @@ class TrainNetwork:
             print(self.get_score())
 
     def __feed_forward(self):
+        X = self.nn.X_data # XXX Pass as arg
+
         layers = self.nn.get_layers()
-        for l in range(len(layers)-1): 
+
+        layers[0].feed_forward(X) # XXX: add x args
+
+        for l in range(1, len(layers)-1): 
             layers[l].feed_forward(self.nn.activation_hidden)
 
         assert(isinstance(layers[l+1], OutputLayer))
