@@ -9,11 +9,11 @@ from importlib import reload
 @dataclass
 class Optimizer: 
     eta: float
-    gradient_method: str
+    # gradient_method: str
     gamma: float = None
     minibatch_size: int = None
 
-    gradient_method_options: list = field(init=False, default_factory=lambda: ['gd', 'sgd'])
+    # gradient_method_options: list = field(init=False, default_factory=lambda: ['gd', 'sgd'])
 
 
     # Parameters used for update

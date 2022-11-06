@@ -87,10 +87,10 @@ if __name__ == '__main__':
 
 
     gamma = 0
-    op = optimizer.Optimizer(eta, 'gd', gamma)
+    op = optimizer.Optimizer(eta, gamma)
     # op = optimizer.Optimizer(eta, 'gd')
 
-    tn = neural_network.TrainNetwork(nn, op)
+    tn = neural_network.TrainNetwork(nn, op, n_minibatches =1)
 
     tic = time.perf_counter()
     tn.train(1000)
@@ -101,18 +101,23 @@ if __name__ == '__main__':
 
     x = p.get_X_trian()[:,1]
 
+    # y = tn.get_output(X_data)
+
+    y = nn.Layers[-1].get_output() # Not same
+    y = tn.get_output(X_data) # as this. feed forward on updated weigts in last epochs
+
+
+    # x_test, y_test = p.get_test()
+    # y_test = tn.get_output(x_test)
+
     t = tn.get_targets()
-    y = tn.get_output()
+    # y = tn.get_output()
     plt.scatter(x, y, label='y')
     plt.scatter(x, t, label='t')
     plt.legend()
     plt.show()
 
 
-
-    # output1 = tn.get_output()
-    # tn.train(100)
-    # output100 = tn.get_output()
 
     
 

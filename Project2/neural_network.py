@@ -19,34 +19,7 @@ import copy
 
 logging.basicConfig(format='%(message)s', filename='./flow.log', encoding='utf-8', level=logging.DEBUG, force=True)
 logging.getLogger().disabled = True
-# logging.getLogger('parso.python.diff').setLevel('INFO') 
 
-# FORMAT = "%(message)s"
-# # logging.basicConfig(
-# #     filename=level=logging.DEBUG, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
-# # )
-# log = logging.getLogger("rich")
-# log.info("Hello, World!")
-
-
-# def SE(y, t):
-#     """ Squared error cost function""" # XXX: removed 1/2
-#     # assert(len(y.shape) == 1)
-#     return jnp.sum((t - y)**2)
-
-def costRidge(y, t, lamb): 
-    # assert(len(y.shape) == 1)
-    return jnp.sum((t - y)**2) + lamb * np.sum(y**2)
-
-# def sigmoid(x):
-#     return 1/(1 + jnp.exp(-x))
-
-# def derivative_sigmoid(sigm): 
-#     """ Input values gotten from sigmoid funcitno """
-#     return sigm * (1 - sigm)
-
-
-# TODO: incremental id
 @dataclass
 class Layer(abc.ABC):
 
@@ -66,8 +39,6 @@ class Layer(abc.ABC):
     def update_weights(initial_optimizer_ob: optimizer.Optimizer) -> None: 
         """ Calculates derivate of cost function with respect to weigts and bias for current layer """
 
-
-
 @dataclass
 class InputLayer(Layer):
     n_nodes: int # n_nodes = n_features
@@ -75,15 +46,9 @@ class InputLayer(Layer):
 
     W = None
     b = None
-    # W: np.ndarray = field(repr=False)
-    # b: np.ndarray = field(repr=False)
 
     prev_Layer = None
     next_Layer = object()
-
-    # update: bool = None # True when layers is ready for update, else False
-
-    # def __post_init__(self): 
 
     def init_bias_and_weigths(self):
         pass
@@ -97,14 +62,11 @@ class InputLayer(Layer):
     def feed_forward(self, X: np.ndarray):
         logging.info('================== InputLayer.feed_forward ===============')
         self.X = X
-        # self.n_nodes = np.shape(self.X)[1]
 
         logging.info(f'  X: ({self.X.shape})')
 
     def update_weights(self, eta, stdout=False) -> None:
         logging.info('=============== InputLayer.update_weights ===============')
-        # Hidd # TODO: logging
-        # self.update = False
 
     
 @dataclass
@@ -131,12 +93,6 @@ class HiddenLayer(Layer):
         # TODO: check if prev layer is Initialized
         self.b = np.zeros(self.n_nodes) + 0.01
         self.W = np.random.randn(self.prev_Layer.n_nodes, self.n_nodes)
-
-    # def set_optimizer(self, op: optimizer.Optimizer): 
-    #     if self.op != None: 
-    #         raise AttributeError('Optimizer object is already initialized')
-
-    #     self.op = op 
 
     def get_output(self):
         if np.size(self.a_l) == 1: 
@@ -187,9 +143,6 @@ class HiddenLayer(Layer):
         logging.info(f'delta: ({delta.shape}) = next_Layer.delta: ({self.next_Layer.delta.shape}) @ transpose(next_Layer.W): ({np.transpose(self.next_Layer.W).shape}) * derivative_activation ({self.derivative_activation.shape})')
         logging.info(f'W_new: ({W_new.shape}) = W_old: ({self.W.shape}) - eta * gradient_weights: ({gradient_weights.shape})')
         logging.info(f'b_new: ({b_new.shape}) = b_old: ({self.b.shape}) - eta * gradient_weights: ({gradient_bias.shape})')
-        # logging.info(f'W_new = {W_new}')
-        # logging.info(f'b_new = {b_new}')
-
 
 
 @dataclass
@@ -228,9 +181,9 @@ class OutputLayer(Layer):
 
         return self.a_l
 
-    def feed_forward(self, activation_output: str) -> None:
+    def feed_forward(self, activation_output: str, ignore: bool = False) -> None:
         logging.info('=============== OutputLayer.feed_forward ===============')
-        if self.update == True: 
+        if ignore == False and self.update == True:  
             raise ValueError('Network is ready for update. Run method update_weights before next iteration')
 
         output_prev_layer = self.prev_Layer.get_output()
@@ -257,14 +210,13 @@ class OutputLayer(Layer):
             assert(isinstance(initial_optimizer_ob, optimizer.Optimizer))
             self.op = copy.deepcopy(initial_optimizer_ob)
 
-        sc = scores.Scores(self.a_l, targets, self.score)  # Error are handled in Scores class
+        sc = scores.Scores(self.a_l, targets, self.score)  # Errors are handled in Scores class
         grad_cost = sc.get_derivative()
 
         delta = self.derivative_activation * grad_cost 
         gradient_weights = np.transpose(self.a_l) @ delta
         gradient_bias = np.sum(delta, axis = 0)
 
-        # Pass gradient
         # Calcaulate change in optimizer object
         W_change, b_change = self.op.update_change(gradient_weights, gradient_bias)
 
@@ -274,9 +226,6 @@ class OutputLayer(Layer):
 
         W_new = self.W - W_change
         b_new = self.b - b_change
-
-        # print(W_new)
-        # print(b_new)
 
         self.W = W_new
         self.b = b_new
@@ -288,11 +237,6 @@ class OutputLayer(Layer):
         logging.info(f'delta: ({delta.shape}) = derivative_activation: ({self.derivative_activation.shape}) * grad_cost: ({grad_cost.shape})')
         logging.info(f'W_new: ({W_new.shape}) = W_old: ({self.W.shape}) - eta * gradient_weights: ({gradient_weights.shape})')
         logging.info(f'b_new: ({b_new.shape}) = b_old: ({self.b.shape}) - eta * gradient_weights: ({gradient_bias.shape})')
-        # logging.info(f'W_new = {W_new}')
-        # logging.info(f'b_new = {b_new}')
-        
-        
-
 
 
 @dataclass
@@ -303,7 +247,6 @@ class NeuralNetwork:
 
     n_hidden_layers: int
     n_nodes_per_hidden_layer: int
-    # n_targets: int = field(init=False)
     n_output_nodes: int
 
     cost_score: str
@@ -312,10 +255,10 @@ class NeuralNetwork:
     activation_output: str  # TODO
 
     n_features: int = field(init=False)
-    n_data: int = field(init=False)
 
     Layers: Layer = field(default_factory=lambda: [])
     op: optimizer.Optimizer = field(init=False, default=None)
+
     def __post_init__(self):
         X_data, y_data = self.X_data, self.y_data
 
@@ -327,8 +270,6 @@ class NeuralNetwork:
 
         self.X_data, self.y_data = X_data, y_data
         self.n_features = self.X_data.shape[1]
-        self.n_data = self.X_data.shape[0] # XXX: Problem ? 
-
         self.__init_layers()
 
 
@@ -373,6 +314,12 @@ class NeuralNetwork:
     def get_optimizer(self) -> optimizer.Optimizer: 
         return self.op
 
+    def get_X_data(self): 
+        return self.X_data
+
+    def get_targets(self):
+        return self.y_data
+
 
 @dataclass
 class TrainNetwork: 
@@ -384,13 +331,12 @@ class TrainNetwork:
     nn: NeuralNetwork
     op: optimizer.Optimizer
 
-    # Hyper parameters
-    # gradient_method: str # sdg or gd 
-    # eta: float # Learning rate
-    # gamma: float = None
 
+    n_minibatches: int = None
+    size_minibatch: int = None 
+
+    X_full: np.ndarray = field(init=False, repr=False)
     t: np.ndarray = field(init=False, repr=False) # Targets
-    a_L: np.ndarray = field(init=False, repr=False) # Values frm output Layer 
 
     def __post_init__(self):
         logging.info('=============== INIT NN ===============')
@@ -399,32 +345,79 @@ class TrainNetwork:
         self.nn.set_optimizer(self.op)
         assert(self.nn.op != None)
 
+        if self.n_minibatches != None and self.size_minibatch != None:
+            raise ValueError('Set n_minibatches or minibatch_size, not both.')
+
+        # TODO: 
+        X = self.nn.get_X_data()
+        assert(len(X.shape) != 1)
+        assert(np.shape(X)[0] > np.shape(X)[1])
+
+        # Set n_minibatches or size_minibatch
+        if self.n_minibatches != None: 
+            self.size_minibatch = int( len(X)/self.n_minibatches ) 
+
+        elif self.size_minibatch != None: 
+            self.n_minibatches = int( len(X)/self.size_minibatch )
+
+        else:
+            raise ValueError('Requires n_minibatches or size_minibatch')
+
+
+        self.X_full = X
+
+
+
+
+
+
 
     def train(self, epochs: int): 
-        for i in range(epochs):
-            self.__feed_forward()
-            self.__back_propagation()
+        targets = self.nn.get_targets()  
+        X = self.X_full
+        n_minibatches = self.n_minibatches
+        size_minibatch = self.size_minibatch
 
-            # print(i)
-            print(self.get_score())
+        for epoch in range(epochs):
+            for i in range(n_minibatches):
+            
+                k = np.random.randint(n_minibatches) # Pick random minibatch
+                # k = i # XXX: remove
+                slice_0 = k*size_minibatch
+                slice_1 = (k+1)*size_minibatch 
+                # XXX: Each batch is predifiend
+                # XXX: Same minibatch may be selected twice
+                minibatch_X = X[slice_0:slice_1]
+                minibatch_targets = targets[slice_0:slice_1]
 
-    def __feed_forward(self):
-        X = self.nn.X_data # XXX Pass as arg
+                self.__feed_forward(minibatch_X)
+                self.__back_propagation(minibatch_targets)
+
+    def __feed_forward(self, X, ignore=False):
+        """
+        Parameters:
+            ignore: if True -> ignores update safety
+        """
 
         layers = self.nn.get_layers()
 
-        layers[0].feed_forward(X) # XXX: add x args
+        # Feed forward input layer
+        layers[0].feed_forward(X)
 
+        # Fedd forward hidden layers
         for l in range(1, len(layers)-1): 
             layers[l].feed_forward(self.nn.activation_hidden)
 
+        # Fedd forward Ouput layer
         assert(isinstance(layers[l+1], OutputLayer))
-        layers[l+1].feed_forward(self.nn.activation_output)
-        output = layers[l+1].get_output()
-        self.a_L = output
+        layers[l+1].feed_forward(self.nn.activation_output, ignore)
 
-    def __back_propagation(self):
-        targets = self.nn.get_targets()  # XXX: Add as arg 
+        # Retrun ouput from activation funciton in ouput layer
+        output = layers[l+1].get_output()
+
+        return output
+
+    def __back_propagation(self, targets: np.ndarray):
         layers = self.nn.get_layers()
         op = self.op
 
@@ -432,18 +425,19 @@ class TrainNetwork:
         assert(isinstance(layers[-1], OutputLayer))
         layers[-1].update_weights(op, targets)
 
+        # Calculate score for minibatch
+        output_minibatch = layers[-1].get_output()
+        sc = scores.Scores( a_L=output_minibatch, t=targets, score_name=self.nn.cost_score) 
+        print(sc.get_score())
+
         for l in range(len(layers)-2, 0, -1): 
             layers[l].update_weights(op)
-            # XXX Optimizer needs update
 
-    def get_output(self):
-        try: 
-            return self.a_L
-        except AttributeError: 
-            raise AttributeError('Use method "train" to create output variable (a_L)') 
+    def get_output(self, X): # XXX: will change layers, a_l value
+        return self.__feed_forward(X, ignore=True)
 
-    def get_score(self):
-        sc = scores.Scores(self.a_L, self.t, self.nn.cost_score)
+    def get_score(self, X): # XXX: will change alyers, a_l value 
+        sc = scores.Scores(self.get_output(X), self.t, self.nn.cost_score)
         return sc.get_score()
 
     def get_targets(self):
