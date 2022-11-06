@@ -11,5 +11,9 @@ if __name__ == '__main__':
 
     x = np.linspace(-10, 5, 100)
 
-    af = activation.Activation(x, 'sigmoid')
+    # af = activation.Activation(x, 'relu')
+    af = activation.Activation(x, 'leaky_relu')
+    vals, der = af.get_values()
+
+    af = activation.Activation(x, 'relu')
     vals, der = af.get_values()

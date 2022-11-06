@@ -18,7 +18,7 @@ class PolyData:
     test_size: float = 0.2
 
     seed = 1
-    set_seed = True
+    set_seed: bool = True
 
     x: np.ndarray = field(init=False, repr=False)
     y: np.ndarray = field(init=False, repr=False)
