@@ -317,8 +317,6 @@ class NeuralNetwork:
     def get_X_data(self): 
         return self.X_data
 
-    def get_targets(self):
-        return self.y_data
 
 
 @dataclass
@@ -335,12 +333,12 @@ class TrainNetwork:
     n_minibatches: int = None
     size_minibatch: int = None 
 
-    X_full: np.ndarray = field(init=False, repr=False)
-    t: np.ndarray = field(init=False, repr=False) # Targets
+    X_full: np.ndarray = field(init=False, repr=False) # X full trianing data
+    t_full: np.ndarray = field(init=False, repr=False) # Targets
 
     def __post_init__(self):
         logging.info('=============== INIT NN ===============')
-        self.t = self.nn.get_targets()
+        self.t_full = self.nn.get_targets()
         assert(self.nn.op == None)
         self.nn.set_optimizer(self.op)
         assert(self.nn.op != None)
@@ -405,8 +403,10 @@ class TrainNetwork:
         layers[0].feed_forward(X)
 
         # Fedd forward hidden layers
-        for l in range(1, len(layers)-1): 
-            layers[l].feed_forward(self.nn.activation_hidden)
+        l = 0  #  If no hidden layers
+        if len(layers) != 2:  
+            for l in range(1, len(layers)-1): 
+                layers[l].feed_forward(self.nn.activation_hidden)
 
         # Fedd forward Ouput layer
         assert(isinstance(layers[l+1], OutputLayer))
@@ -436,12 +436,17 @@ class TrainNetwork:
     def get_output(self, X): # XXX: will change layers, a_l value
         return self.__feed_forward(X, ignore=True)
 
-    def get_score(self, X): # XXX: will change alyers, a_l value 
+    def get_score(self, X, t): # XXX: will change alyers, a_l value 
         sc = scores.Scores(self.get_output(X), self.t, self.nn.cost_score)
         return sc.get_score()
 
-    def get_targets(self):
-        return self.t
+    def get_accuracy(self, X, t): 
+        output = self.__feed_forward(X, ignore=True)
+        assert(t.shape[1] == 1)
+        acc = np.sum(output == t)/len(t)
+        return acc
+        
+
 
 
     
