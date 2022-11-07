@@ -22,25 +22,47 @@ class Scores:
     a_L: np.ndarray = field(repr=False) # Ouput from output layer
     t: np.ndarray = field(repr=False) # Targets
     score_name: str
-    options: list = field(init=False, default_factory=lambda: ['mse'])
+    options: list = field(init=False, default_factory=lambda: ['mse', 'cross_entropy'])
 
     def __post_init__(self):
         assert(self.score_name in self.options)
         assert(self.a_L.shape == self.t.shape)
+        assert(self.a_L.shape[1] == 1)
+
+    def __sigmoid(self, x):
+        return 1/(1 + np.exp(-x))
 
     def MSE(self, y, t):
         """ Squared error cost function""" # XXX: removed 1/n
         return 1/2 * np.sum((t - y)**2)
 
+    def __cross_entropy(self, y, t): # XXX: removed or include 1/n
+        # Prob belonging to class 0, defined as sigmoid
+        # N = len(t)
+        # Ln = -t * np.log(y) - (1 - t) * np.log(1 - y)
+        # return np.sum(Ln)
+        Ln = t * np.log(y) + (1 - t) * np.log(1 - y)
+        return -1*np.sum(Ln)/len(t)
+
+    def __derivative_cross_entropy(self, y, t):
+        # return -t/y + (1 - t) * 1/(1 - y)
+        
+        return (y-t)/(y*(1-y))
+
+
     def get_score(self): 
         if self.score_name == 'mse': 
             return float(self.MSE(self.a_L, self.t))
+        elif self.score_name == 'cross_entropy': 
+            return self.__cross_entropy(self.a_L, self.t)
         else:
             raise ValueError('Allowed opitons for score_name is: {self.options}')
 
     def get_derivative(self): 
         if self.score_name == 'mse': 
             return self.a_L - self.t
+        elif self.score_name == 'cross_entropy': 
+            return self.__derivative_cross_entropy(self.a_L, self.t)
         else:
             raise ValueError('Allowed opitons for score_name is: {self.options}')
 

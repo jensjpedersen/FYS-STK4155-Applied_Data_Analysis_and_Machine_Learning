@@ -212,6 +212,8 @@ class OutputLayer(Layer):
 
         sc = scores.Scores(self.a_l, targets, self.score)  # Errors are handled in Scores class
         grad_cost = sc.get_derivative()
+        # grad_cost = (self.a_l-targets)/(self.a_l*(1-self.a_l)) # FIXME: testing
+
 
         delta = self.derivative_activation * grad_cost 
         gradient_weights = np.transpose(self.a_l) @ delta
@@ -336,6 +338,13 @@ class TrainNetwork:
     X_full: np.ndarray = field(init=False, repr=False) # X full trianing data
     t_full: np.ndarray = field(init=False, repr=False) # Targets
 
+    # data
+    scores_minibatch: list = field(init=False, repr=False, default_factory=lambda: []) # Calculated when weights are updated in output layer
+                                                           # Init in train data
+                            
+
+    
+
     def __post_init__(self):
         logging.info('=============== INIT NN ===============')
         self.t_full = self.nn.get_targets()
@@ -428,7 +437,10 @@ class TrainNetwork:
         # Calculate score for minibatch
         output_minibatch = layers[-1].get_output()
         sc = scores.Scores( a_L=output_minibatch, t=targets, score_name=self.nn.cost_score) 
-        print(sc.get_score())
+        score = sc.get_score()
+        self.scores_minibatch.append(score)
+        print(score)
+        # self.scores_minibatch
 
         for l in range(len(layers)-2, 0, -1): 
             layers[l].update_weights(op)
@@ -437,13 +449,14 @@ class TrainNetwork:
         return self.__feed_forward(X, ignore=True)
 
     def get_score(self, X, t): # XXX: will change alyers, a_l value 
-        sc = scores.Scores(self.get_output(X), self.t, self.nn.cost_score)
+        sc = scores.Scores(self.get_output(X), t, self.nn.cost_score)
         return sc.get_score()
 
     def get_accuracy(self, X, t): 
-        output = self.__feed_forward(X, ignore=True)
+        output = self.get_output(X)
         assert(t.shape[1] == 1)
-        acc = np.sum(output == t)/len(t)
+        pred = np.where(output > 0.5, 1, 0)
+        acc = np.sum(pred == t)/len(t)
         return acc
         
 
