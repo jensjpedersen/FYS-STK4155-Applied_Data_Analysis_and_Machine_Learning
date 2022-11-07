@@ -69,15 +69,12 @@ if __name__ == '__main__':
     reload(optimizer)
 
     np.random.seed(0)
-
     p = poly_data.PolyData(n_data=1000)
 
-    # eta = 0.00001
-    eta = 0.0001
     depth = 1 
     width = 5 
-
     n_output_nodes = 1
+
     cost_score = 'mse'
     activation_hidden = 'sigmoid'
     activation_output = 'none'
@@ -85,35 +82,27 @@ if __name__ == '__main__':
     X_data, y_data = p.get_train()
     nn = neural_network.NeuralNetwork( X_data, y_data, depth, width, n_output_nodes, cost_score, activation_hidden, activation_output)
 
-
+    eta = 0.0001
     gamma = 0
-    op = optimizer.Optimizer(eta, gamma)
-    # op = optimizer.Optimizer(eta, 'gd')
+    n_epochs = 1000
+    n_minibatches = 1
 
-    tn = neural_network.TrainNetwork(nn, op, n_minibatches =1)
+    op = optimizer.Optimizer(eta, gamma)
+    tn = neural_network.TrainNetwork(nn, op, n_minibatches = n_minibatches)
 
     tic = time.perf_counter()
-    tn.train(1000)
+    tn.train(n_epochs)
     toc = time.perf_counter()
     print(f'took: {toc-tic}')
 
-    p.get_X_trian()
 
     x = p.get_X_trian()[:,1]
-
-    # y = tn.get_output(X_data)
 
     y = nn.Layers[-1].get_output() # Not same
     y = tn.get_output(X_data) # as this. feed forward on updated weigts in last epochs
 
-
-    # x_test, y_test = p.get_test()
-    # y_test = tn.get_output(x_test)
-
-    t = tn.get_targets()
-    # y = tn.get_output()
     plt.scatter(x, y, label='y')
-    plt.scatter(x, t, label='t')
+    plt.scatter(x, y_data, label='t')
     plt.legend()
     plt.show()
 
