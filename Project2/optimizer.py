@@ -12,6 +12,7 @@ class Optimizer:
     # gradient_method: str
     gamma: float = None
     minibatch_size: int = None
+    lambd: float = 0 
 
     # gradient_method_options: list = field(init=False, default_factory=lambda: ['gd', 'sgd'])
 
@@ -35,12 +36,16 @@ class Optimizer:
         self.number_of_updates += 1
 
         # TODO: Update sheme
+        W_change = self.eta * gradient_weights
+        b_change = self.eta * gradient_bias
+
         if self.gamma != None: 
-            W_change = self.eta * gradient_weights + self.gamma*self.W_change
-            b_change = self.eta * gradient_bias + self.gamma*self.b_change
-        else: 
-            W_change = self.eta * gradient_weights
-            b_change = self.eta * gradient_bias
+            W_change += self.gamma*self.W_change
+            b_change += self.gamma*self.b_change
+
+        if self.lambd > 0:
+            W_change += self.lambd * gradient_weights # FIXME: Add to bias ? 
+            b_change += self.lambd * gradient_bias
 
         self.W_change, self.b_change = W_change, b_change
 

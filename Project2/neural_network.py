@@ -220,7 +220,10 @@ class OutputLayer(Layer):
         gradient_bias = np.sum(delta, axis = 0)
 
         # Calcaulate change in optimizer object
-        W_change, b_change = self.op.update_change(gradient_weights, gradient_bias)
+
+        # TODO: maybe just calc W_new and b_new in optimizer
+        W_change, b_change = self.op.update_change(gradient_weights, gradient_bias) # add weigts
+
 
         # FIXME: if no optimizer, maybe? 
         # W_change = eta * gradient_weights
@@ -384,9 +387,16 @@ class TrainNetwork:
         X = self.X_full
         n_minibatches = self.n_minibatches
         size_minibatch = self.size_minibatch
+        # data_indices = np.arange(len(targets))
 
         for epoch in range(epochs):
             for i in range(n_minibatches):
+
+                # chosen_datapoints = np.random.choice(
+                #         data_indices, size=n_minibatches, replace=False)
+                # # minibatch training data
+                # minibatch_X = X[chosen_datapoints]
+                # minibatch_targets = targets[chosen_datapoints]
             
                 k = np.random.randint(n_minibatches) # Pick random minibatch
                 # k = i # XXX: remove
