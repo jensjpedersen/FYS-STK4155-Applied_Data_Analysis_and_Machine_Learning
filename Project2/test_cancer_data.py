@@ -10,12 +10,12 @@ import time
 from sklearn.model_selection import  train_test_split 
 from sklearn.datasets import load_breast_cancer
 from sklearn.linear_model import LogisticRegression
+import sklearn as skl 
 
 import neural_network
 import scores
 import activation
 import optimizer
-
 
 if __name__ == '__main__':
     reload(neural_network)
@@ -38,6 +38,15 @@ if __name__ == '__main__':
     # print("Test set accuracy with Logistic Regression: {:.8f}".format(logreg.score(X_test,y_test)))
 
 
+    # Scale data with mean and std
+    scaler = skl.preprocessing.StandardScaler()
+    scaler.fit(X_train)
+    # X_train_scaled = scaler.transform(X_train)
+    # X_test_scaled = scaler.transform(X_test)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
+
+
     # np.random.seed(0)
 
 
@@ -49,7 +58,7 @@ if __name__ == '__main__':
     n_output_nodes = 1
     cost_score = 'mse'
     cost_score = 'cross_entropy'
-    activation_hidden = 'leaky_relu'
+    activation_hidden = 'sigmoid'
     activation_output = 'sigmoid'
 
     nn = neural_network.NeuralNetwork(X_train, y_train, depth, width, n_output_nodes, cost_score, activation_hidden, activation_output)
