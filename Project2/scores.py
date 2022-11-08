@@ -41,13 +41,32 @@ class Scores:
         # N = len(t)
         # Ln = -t * np.log(y) - (1 - t) * np.log(1 - y)
         # return np.sum(Ln)
-        Ln = t * np.log(y) + (1 - t) * np.log(1 - y)
+
+        diff = 1-y
+        diff[diff == 0] = 1e-12
+        Ln = t * np.log(y) + (1 - t) * np.log(diff)
+
+        if np.isnan(np.min(Ln)) == True: 
+            breakpoint()  
+
         return -1*np.sum(Ln)/len(t)
 
     def __derivative_cross_entropy(self, y, t):
         # return -t/y + (1 - t) * 1/(1 - y)
         
-        return (y-t)/(y*(1-y))
+        numerator = (y*(1-y))
+        numerator[numerator == 0] = 1e-12
+        derivative = (y-t)/numerator
+
+        # ans = np.where(abs(derivative)<1e-12)
+        # derivative = np.nan_to_num(derivative, nan=1e-12)
+
+        if np.isnan(np.min(derivative)) == True: 
+            breakpoint()  
+
+        # if len(ans[0]) > 0: 
+        #     breakpoint() 
+        return derivative
 
 
     def get_score(self): 
