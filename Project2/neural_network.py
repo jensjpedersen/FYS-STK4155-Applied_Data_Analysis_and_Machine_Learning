@@ -197,6 +197,9 @@ class OutputLayer(Layer):
         logging.info(f'W = {self.W}')
         logging.info(f'b = {self.b}')
 
+        if ignore == True: 
+            return
+
         self.update = True
 
     def update_weights(self, initial_optimizer_ob: optimizer.Optimizer, targets: np.ndarray) -> None:
