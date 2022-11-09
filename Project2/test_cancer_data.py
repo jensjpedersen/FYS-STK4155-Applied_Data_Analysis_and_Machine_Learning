@@ -47,7 +47,7 @@ if __name__ == '__main__':
     X_test = scaler.transform(X_test)
 
 
-    np.random.seed(0)
+    # np.random.seed(0)
 
 
     # eta = 0.00001
@@ -67,19 +67,44 @@ if __name__ == '__main__':
     lambd = 0
     # op = optimizer.Optimizer(eta, gamma)
     op = optimizer.Optimizer(eta, gamma, lambd=lambd)
+
     # op = optimizer.Optimizer(eta, 'gd')
 
-    tn = neural_network.TrainNetwork(nn, op, n_minibatches = 1)
+    tn = neural_network.TrainNetwork(nn, op, n_minibatches = 10)
 
     tic = time.perf_counter()
-    tn.train(1000)
+    tn.train(200, True, X_test, y_test)
+    # tn.train(200, True, )
     toc = time.perf_counter()
     y = tn.get_output(X_train)
     acc_train = tn.get_accuracy(X_train, y_train)
     acc_test = tn.get_accuracy(X_test, y_test)
     score_train = tn.get_score(X_train, y_train)
     score_test = tn.get_score(X_test, y_test)
+
+
+    test_score = tn.get_all_test_scores()
+    train_score = tn.get_all_train_scores()
+    x = np.arange(1, len(test_score)+1)
+
+    plt.scatter(x, test_score, label = 'test')
+    plt.scatter(x, train_score, label = 'train')
+    plt.legend()
+    plt.show()
+
+    test_acc = tn.get_all_test_accuracyies()
+    train_acc = tn.get_all_train_accuracyies()
+
+    plt.scatter(x, test_acc, label = 'test')
+    plt.scatter(x, train_acc, label = 'train')
+    plt.legend()
+    plt.show()
+
+
+
     
+
+    sys.exit()
 
     score = tn.scores_minibatch
     labels = np.arange(len(score))
@@ -97,8 +122,24 @@ if __name__ == '__main__':
     print(f'score_test = {score_test}')
     
     
+    nn = neural_network.NeuralNetwork(X_train, y_train, depth, width, n_output_nodes, cost_score, activation_hidden, activation_output)
+    op = optimizer.Optimizer(eta, gamma, lambd=lambd)
+    tn = neural_network.TrainNetwork(nn, op, n_minibatches = 1)
+    tn.train(100)
 
 
+
+    y = tn.get_output(X_train)
+    # acc_train = tn.get_accuracy(X_train, y_train)
+    # acc_test = tn.get_accuracy(X_test, y_test)
+    # score_train = tn.get_score(X_train, y_train)
+    # score_test = tn.get_score(X_test, y_test)
+    
+
+    score = tn.scores_minibatch
+    labels = np.arange(len(score))
+    plt.plot(labels, score)
+    plt.show()
 
 
 

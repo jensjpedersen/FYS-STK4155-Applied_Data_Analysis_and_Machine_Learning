@@ -346,10 +346,8 @@ class TrainNetwork:
 
     # data
     scores_minibatch: list = field(init=False, repr=False, default_factory=lambda: []) # Calculated when weights are updated in output layer
-                                                           # Init in train data
-                            
-
-    
+    test_scores: np.ndarray = field(init=False, repr=False)
+    train_scores: np.ndarray =  field(init=False, repr=False)
 
     def __post_init__(self):
         logging.info('=============== INIT NN ===============')
@@ -385,7 +383,25 @@ class TrainNetwork:
 
 
 
-    def train(self, epochs: int): 
+    def train(self, epochs: int, save_scores: bool = False, X_test: np.ndarray = None, y_test: np.ndarray = None): 
+        """
+        Parameters:
+            save_scores: if True, save predicted scores for full dataset in each epoch.
+                         This significantly slows down the training.
+        """
+
+        if save_scores == True: 
+            if isinstance(X_test, type(None)) or isinstance(y_test, type(None)):
+                raise ValueError('Test-data is reuqired in order to save scores')
+
+            if self.nn.cost_score == 'cross_entropy':
+                self.train_accuracies = np.zeros(epochs)
+                self.test_accuracies = np.zeros(epochs)
+
+            self.test_scores = np.zeros(epochs)
+            self.train_scores = np.zeros(epochs)
+
+
         targets = self.nn.get_targets()  
         X = self.X_full
         n_minibatches = self.n_minibatches
@@ -413,10 +429,34 @@ class TrainNetwork:
                 self.__feed_forward(minibatch_X)
                 self.__back_propagation(minibatch_targets)
 
+            # Save scores
+            if save_scores == True: 
+                train_output = self.get_output(X)
+                test_output = self.get_output(X_test)
+
+                sc = scores.Scores(train_output, targets, self.nn.cost_score)
+                self.train_scores[epoch] = sc.get_score()
+
+                sc = scores.Scores(test_output, y_test, self.nn.cost_score)
+                self.test_scores[epoch] = sc.get_score()
+
+                self.train_scores[epoch] = self.get_score(X, targets)
+                self.test_scores[epoch] = self.get_score(X_test, y_test)
+
+            if save_scores == True and self.nn.cost_score == 'cross_entropy':
+                # If cross_entropy use accuracy as classification score
+                train_pred = np.where(train_output > 0.5, 1, 0)
+                test_pred = np.where(test_output > 0.5, 1, 0)
+
+                self.train_accuracies[epoch] = np.sum(train_pred == targets)/len(targets)
+                self.test_accuracies[epoch] = np.sum(test_pred == y_test)/len(y_test)
+
+
     def __feed_forward(self, X, ignore=False):
         """
         Parameters:
-            ignore: if True -> ignores update safety
+            ignore: if True -> ignores update safety. 
+                    Set to True if __feed_forward is called before or mid training. 
         """
 
         layers = self.nn.get_layers()
@@ -453,19 +493,46 @@ class TrainNetwork:
         score = sc.get_score()
         self.scores_minibatch.append(score)
         print(score)
-        # self.scores_minibatch
 
         for l in range(len(layers)-2, 0, -1): 
             layers[l].update_weights(op)
 
-    def get_output(self, X): # XXX: will change layers, a_l value
+    def get_all_test_scores(self) -> np.ndarray: 
+        try:
+            return self.test_scores
+        except AttributeError as e: 
+            raise AttributeError('Run method train with parameter save_scores=True first.') from e
+
+    def get_all_train_scores(self) -> np.ndarray: 
+        try:
+            return self.train_scores
+        except AttributeError as e: 
+            raise AttributeError('Run method train with parameter save_scores=True first.') from e
+
+    def get_all_test_accuracyies(self) -> np.ndarray: 
+        try:
+            return self.test_accuracies
+        except AttributeError as e: 
+            raise AttributeError('Run method train with parameter save_scores=True first.' \
+                                 'Variable is only created if nn.cost_score="cross_entropy"') from e
+
+    def get_all_train_accuracyies(self): 
+        pass
+        try:
+            return self.train_accuracies
+        except AttributeError as e: 
+            raise AttributeError('Run method train with parameter save_scores=True first.' \
+                                 'Variable is only created if nn.cost_score="cross_entropy"') from e
+
+
+    def get_output(self, X) -> np.ndarray: # XXX: will change layers, a_l value
         return self.__feed_forward(X, ignore=True)
 
-    def get_score(self, X, t): # XXX: will change alyers, a_l value 
+    def get_score(self, X, t) -> float: # XXX: will change alyers, a_l value 
         sc = scores.Scores(self.get_output(X), t, self.nn.cost_score)
         return sc.get_score()
 
-    def get_accuracy(self, X, t): 
+    def get_accuracy(self, X, t) -> float: 
         output = self.get_output(X)
         assert(t.shape[1] == 1)
         pred = np.where(output > 0.5, 1, 0)
