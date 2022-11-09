@@ -46,6 +46,8 @@ class Scores:
         diff[diff == 0] = 1e-12
         Ln = t * np.log(y) + (1 - t) * np.log(diff)
 
+        Ln = np.nan_to_num(Ln)
+
         if np.isnan(np.min(Ln)) == True: 
             breakpoint()  
 
