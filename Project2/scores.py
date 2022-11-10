@@ -33,8 +33,8 @@ class Scores:
         return 1/(1 + np.exp(-x))
 
     def MSE(self, y, t):
-        """ Squared error cost function""" # XXX: removed 1/n
-        return 1/2 * np.sum((t - y)**2)
+        """ Squared error cost function""" # XXX: removed or include 1/n
+        return 1/2 * np.sum((t - y)**2) / len(t)
 
     def __cross_entropy(self, y, t): # XXX: removed or include 1/n
         # Prob belonging to class 0, defined as sigmoid
@@ -68,7 +68,7 @@ class Scores:
 
         # if len(ans[0]) > 0: 
         #     breakpoint() 
-        return derivative
+        return derivative / len(t)
 
 
     def get_score(self): 
@@ -81,7 +81,7 @@ class Scores:
 
     def get_derivative(self): 
         if self.score_name == 'mse': 
-            return self.a_L - self.t
+            return (self.a_L - self.t)/len(self.t)
         elif self.score_name == 'cross_entropy': 
             return self.__derivative_cross_entropy(self.a_L, self.t)
         else:
