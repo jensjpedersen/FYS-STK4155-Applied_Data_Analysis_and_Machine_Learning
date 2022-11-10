@@ -16,6 +16,8 @@ import logging
 import activation 
 import optimizer
 import copy
+import threading
+import time
 
 logging.basicConfig(format='%(message)s', filename='./flow.log', encoding='utf-8', level=logging.DEBUG, force=True)
 logging.getLogger().disabled = True
@@ -408,6 +410,7 @@ class TrainNetwork:
         size_minibatch = self.size_minibatch
         # data_indices = np.arange(len(targets))
 
+        tic = time.perf_counter()
         for epoch in range(epochs):
             for i in range(n_minibatches):
 
@@ -428,6 +431,7 @@ class TrainNetwork:
 
                 self.__feed_forward(minibatch_X)
                 self.__back_propagation(minibatch_targets)
+
 
             # Save scores
             if save_scores == True: 
@@ -450,6 +454,17 @@ class TrainNetwork:
 
                 self.train_accuracies[epoch] = np.sum(train_pred == targets)/len(targets)
                 self.test_accuracies[epoch] = np.sum(test_pred == y_test)/len(y_test)
+
+            # if epoch != 0 and epochs % epoch == 0:
+            if epoch % (epochs//10) == 0:
+                print(f'\n=============== Training: {epoch/epochs * 100}% ===============\n')
+
+            if (time.perf_counter() - tic) > 0.03: 
+                tic = time.perf_counter()
+                print(self.scores_minibatch[-1])
+
+
+
 
 
     def __feed_forward(self, X, ignore=False):
@@ -492,7 +507,7 @@ class TrainNetwork:
         sc = scores.Scores( a_L=output_minibatch, t=targets, score_name=self.nn.cost_score) 
         score = sc.get_score()
         self.scores_minibatch.append(score)
-        print(score)
+        # print(score)
 
         for l in range(len(layers)-2, 0, -1): 
             layers[l].update_weights(op)
