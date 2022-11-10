@@ -27,6 +27,7 @@ class Analysis:
     cost_score: str
     activation_hidden: str
     activation_output: str
+    tuning_method: str
 
     eta: float
     gamma: float
@@ -35,14 +36,101 @@ class Analysis:
     epochs: int
     n_minibatches: int
 
-    def plot_heatmap(self, score: str = 'accuracy'): 
-        score_options = ['accuracy', 'mse']
-        assert(score in score_options)
+    def setup_network(self, self_copy, save_scores=False) -> neural_network.TrainNetwork: 
+        """ Sets up optimizer and Network and trains network """
 
-        self_copy = copy.deepcopy(self) # Don't want to do changes to origianl object
+        # Setup neurla Network
+        nn = neural_network.NeuralNetwork(
+                X_data = self_copy.X_train,
+                y_data = self_copy.y_train,
+                n_hidden_layers = self_copy.depth,
+                n_nodes_per_hidden_layer = self_copy.width,
+                n_output_nodes = self_copy.n_output_nodes,
+                cost_score = self_copy.cost_score,
+                activation_hidden = self_copy.activation_hidden,
+                activation_output = self_copy.activation_output
+                )
+
+        op = optimizer.Optimizer(
+                eta = self_copy.eta,
+                gamma = self_copy.gamma,
+                lambd = self_copy.lambd,
+                tuning_method = self_copy.tuning_method
+                )
+
+        tn = neural_network.TrainNetwork(nn, op, n_minibatches = self_copy.n_minibatches)
+
+        if save_scores == True:
+            tn.train(epochs=self_copy.epochs, save_scores = save_scores, X_test = self.X_test, y_test = self.y_test)
+        else: 
+            tn.train(epochs=self_copy.epochs)
+
+        return tn
+
+    def plot_score(self, score: str): 
+        """ Plot score as function of epochs """
+        score_options = ['accuracy', 'cost']
+        if not score in score_options: 
+            raise ValueError(f'Spesify score, valid values are: {score_options}')
+
+        self_copy = copy.deepcopy(self) 
+        values = self.find_list_variables()
+
+        # if values is empty 
+        if len(values) == 0: 
+            # if not empty loop
+
+
+            tn = self.setup_network(self_copy, save_scores=True)
+
+            if score == 'accuracy':
+                train_scores = tn.get_all_train_accuracyies()
+                test_scores = tn.get_all_test_accuracyies()
+
+            elif score == 'cost': 
+                train_scores = tn.get_all_train_scores()
+                test_scores = tn.get_all_test_scores()
+
+            self.__plot(train_scores, test_scores, legend = '', ylabel = score)
+            return
+
+        for variable_name, variable_values in values: 
+            for val in variable_values: 
+                setattr(self_copy, variable_name, val)
+                tn = self.setup_network(self_copy)
+
+
+
+
+
+
+
+
+
+    def __plot(self, train_scores, test_scores, legend, ylabel): 
+        epochs = np.arange(1, len(train_scores)+1)
+
+        fig, ax = plt.subplots()
+
+        sns.set_style("darkgrid")
+        # plt.xlabel(f'Epochs')
+        plt.xlabel('Epochs')
+        plt.ylabel(f'{ylabel}')
+        # sns.lineplot(x=epochs, y=test_scores, marker='o', linewidth=1, label='test')
+        # sns.lineplot(x=epochs, y=train_scores, marker='o', linewidth=1, label='train')
+        sns.lineplot(x=epochs, y=test_scores, linewidth=1, label=f'test data {legend}')
+        sns.lineplot(x=epochs, y=train_scores, linewidth=1, label=f'train data {legend}')
+        self.toggle_legend(ax)
+        plt.show()
+        
+
+
+    def find_list_variables(self) -> list: 
+        """ 
+        Returns:
+            values: list of tuple[str, list]. First and second vlaue in tuple
+                    correspond to variable name and values respectivly """
         values: list = []  # Heatmap is created from values in this list
-                           # First tuple is plotted on x-axis 
-
 
         for key, val in vars(self).items(): 
             if key in ['X_train', 'y_train', 'X_test', 'y_test']:
@@ -53,14 +141,21 @@ class Analysis:
 
             values.append((key, val))
 
+        return values
+
+    def plot_heatmap(self, score: str = 'accuracy'): 
+        score_options = ['accuracy', 'cost'] # Cost not implemented
+        assert(score in score_options)
+
+        self_copy = copy.deepcopy(self) # Don't want to do changes to origianl object
+
+        values = self.find_list_variables()
+
         if len(values) != 2: 
             raise ValueError('Need two arrays/lists exactly')
 
         if len(values[1][1]) > len(values[0][1]): 
             values.reverse()
-
-        print(values)
-
 
         # Loop through Values
         # set self variable
@@ -76,29 +171,7 @@ class Analysis:
             for j, val_y in enumerate(values[1][1]): 
                 setattr(self_copy, x_label, val_x)
                 setattr(self_copy, y_label, val_y)
-        
-                # Setup neurla Network
-                nn = neural_network.NeuralNetwork(
-                    X_data = self_copy.X_train,
-                    y_data = self_copy.y_train,
-                    n_hidden_layers = self_copy.depth,
-                    n_nodes_per_hidden_layer = self_copy.width,
-                    n_output_nodes = self_copy.n_output_nodes,
-                    cost_score = self_copy.cost_score,
-                    activation_hidden = self_copy.activation_hidden,
-                    activation_output = self_copy.activation_output
-                    )
-
-
-                op = optimizer.Optimizer(
-                    eta = self_copy.eta,
-                    gamma = self_copy.gamma,
-                    lambd = self_copy.lambd
-                    )
-
-                tn = neural_network.TrainNetwork(nn, op, n_minibatches = self_copy.n_minibatches)
-
-                tn.train(epochs=self_copy.epochs)
+                tn = self.setup_network(self_copy)
 
                 # Add scores to matrix
                 train_scores[j, i] = tn.get_accuracy(self.X_train, self.y_train)
@@ -128,7 +201,29 @@ class Analysis:
         plt.ylabel(y_label)
 
         plt.show()
-        breakpoint() 
+
+    def toggle_legend(self, ax):
+        leg = ax.legend(fancybox=True, shadow=True)
+
+        lined = {}  # Will map legend lines to original lines.
+        for legline, origline in zip(leg.get_lines(), ax.get_lines()):
+            legline.set_picker(True)  # Enable picking on the legend line.
+            lined[legline] = origline
+
+
+        def on_pick(event):
+            # On the pick event, find the original line corresponding to the legend
+            # proxy line, and toggle its visibility.
+            legline = event.artist
+            origline = lined[legline]
+            visible = not origline.get_visible()
+            origline.set_visible(visible)
+            # Change the alpha on the line in the legend so we can see what lines
+            # have been toggled.
+            legline.set_alpha(1.0 if visible else 0.2)
+            ax.get_figure().canvas.draw()
+
+        ax.get_figure().canvas.mpl_connect('pick_event', on_pick)
 
 
 
