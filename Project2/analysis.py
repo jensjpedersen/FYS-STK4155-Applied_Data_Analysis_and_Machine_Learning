@@ -95,10 +95,12 @@ class Analysis:
         fig, ax = plt.subplots()
         sns.set_style("darkgrid")
         plt.xlabel('Epochs')
-        plt.ylabel(f'{score}')
+        ylabel = score
 
         if score == 'cost': 
-            plt.ylabel(f'{self.cost_score}')
+            ylabel = self.cost_score
+
+        plt.ylabel(f'{self.__fix_label(ylabel)}')
 
         if len(values) == 0: 
             # if values is empty 
@@ -108,7 +110,7 @@ class Analysis:
             epochs = np.arange(1, len(train_scores)+1)
             sns.lineplot(x=epochs, y=test_scores, linewidth=1, label=f'test data')
             sns.lineplot(x=epochs, y=train_scores, linewidth=1, label=f'train data')
-            self.toggle_legend(ax)
+            self.__toggle_legend(ax)
             plt.show()
             return
 
@@ -123,7 +125,7 @@ class Analysis:
             sns.lineplot(x=epochs, y=test_scores, linewidth=1, label=f'Test data, {variable_name}: {val}')
             sns.lineplot(x=epochs, y=train_scores, linewidth=1, label=f'Train data, {variable_name}: {val}')
 
-        self.toggle_legend(ax)
+        self.__toggle_legend(ax)
         plt.show()
 
 
@@ -204,7 +206,7 @@ class Analysis:
 
         plt.show()
 
-    def toggle_legend(self, ax):
+    def __toggle_legend(self, ax):
         leg = ax.legend(fancybox=True, shadow=True)
 
         lined = {}  # Will map legend lines to original lines.
@@ -226,6 +228,12 @@ class Analysis:
             ax.get_figure().canvas.draw()
 
         ax.get_figure().canvas.mpl_connect('pick_event', on_pick)
+
+    def __fix_label(self, string: str):
+        string = string.capitalize()
+        string = string.replace('_', ' ')
+        return string
+
 
 
 
