@@ -88,6 +88,8 @@ if __name__ == '__main__':
     n_minibatches = 1
 
     op = optimizer.Optimizer(eta, gamma)
+    # op = optimizer.Optimizer(eta, gamma, tuning_method='rms_prop', beta=0.9)
+    # op = optimizer.Optimizer(eta, gamma, tuning_method='adam', beta1=0.9, beta2=0.99)
     tn = neural_network.TrainNetwork(nn, op, n_minibatches = n_minibatches)
 
     tic = time.perf_counter()
