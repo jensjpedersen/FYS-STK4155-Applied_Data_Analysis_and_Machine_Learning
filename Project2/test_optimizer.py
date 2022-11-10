@@ -46,15 +46,19 @@ if __name__ == '__main__':
     nn = neural_network.NeuralNetwork( X_data, y_data, depth, width, n_output_nodes, cost_score, activation_hidden, activation_output)
 
     eta = 0.001
-    gamma = 0
-    n_epochs = 1000
-    n_minibatches = 1
+    gamma = 0.0
+    n_epochs = 500
+    n_minibatches = 10 
 
     tuning_method = 'none'
     tuning_method = 'rms_prop'
-    beta = 0.0
+    tuning_method = 'adam'
+    beta = 0.9
+    beta1 = 0.9
+    beta2 = 0.99
+
         
-    op = optimizer.Optimizer(eta, gamma, tuning_method=tuning_method, beta=beta)
+    op = optimizer.Optimizer(eta, gamma, tuning_method=tuning_method, beta=beta, beta1=beta1, beta2=beta2)
     tn = neural_network.TrainNetwork(nn, op, n_minibatches = n_minibatches)
 
     tic = time.perf_counter()
