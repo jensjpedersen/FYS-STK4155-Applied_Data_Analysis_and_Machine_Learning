@@ -16,7 +16,6 @@ import logging
 import activation 
 import optimizer
 import copy
-import threading
 import time
 
 logging.basicConfig(format='%(message)s', filename='./flow.log', encoding='utf-8', level=logging.DEBUG, force=True)
@@ -457,7 +456,8 @@ class TrainNetwork:
 
             # if epoch != 0 and epochs % epoch == 0:
             if epoch % (epochs//10) == 0:
-                print(f'\n=============== Training: {epoch/epochs * 100}% ===============\n')
+                print(f'{self.scores_minibatch[-1]}          Training: {epoch/epochs * 100}% ')
+
 
             if (time.perf_counter() - tic) > 0.03: 
                 tic = time.perf_counter()
