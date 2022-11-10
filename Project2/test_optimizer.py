@@ -51,14 +51,15 @@ if __name__ == '__main__':
     n_minibatches = 10 
 
     tuning_method = 'none'
-    tuning_method = 'rms_prop'
+    # tuning_method = 'rms_prop'
     tuning_method = 'adam'
-    beta = 0.9
-    beta1 = 0.9
-    beta2 = 0.99
+    # beta = 0.9
+    # beta1 = 0.9
+    # beta2 = 0.99
 
         
-    op = optimizer.Optimizer(eta, gamma, tuning_method=tuning_method, beta=beta, beta1=beta1, beta2=beta2)
+    # op = optimizer.Optimizer(eta, gamma, tuning_method=tuning_method, beta=beta, beta1=beta1, beta2=beta2)
+    op = optimizer.Optimizer(eta, gamma, tuning_method=tuning_method)
     tn = neural_network.TrainNetwork(nn, op, n_minibatches = n_minibatches)
 
     tic = time.perf_counter()

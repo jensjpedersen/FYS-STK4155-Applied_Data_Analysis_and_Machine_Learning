@@ -14,9 +14,9 @@ class Optimizer:
     gamma: float = None
     minibatch_size: int = None
     lambd: float = 0 
-    beta: float = None # beta for rms_prop, typiclly 0.9
-    beta1: float = None # beta first Momentum, typiclly 0.9
-    beta2: float = None # beta secomd momentum, typiccly 0.99
+    beta: float = 0.9 # beta for rms_prop, typiclly 0.9
+    beta1: float = 0.9 # beta first Momentum, typiclly 0.9
+    beta2: float = 0.999 # beta secomd momentum, typiccly 0.99
     tuning_method: str = 'none'
     tuning_method_options: tuple = field(init=False, default = ('none', 'rms_prop', 'adam'))
 
