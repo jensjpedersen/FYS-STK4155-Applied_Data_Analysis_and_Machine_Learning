@@ -58,6 +58,8 @@ class PolyData:
 
     def __create_polynomial(self): 
         y = self.X @ self.coeff
+        # noise = 0.1 * np.random.randn(len(y)) 
+        # y = y + noise
         object.__setattr__(self, 'y', y)
     
     def __create_design_matrix(self): 
