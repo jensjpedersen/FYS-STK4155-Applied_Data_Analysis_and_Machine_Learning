@@ -58,13 +58,18 @@ if __name__ == '__main__':
         "epochs": 500
         }
 
-    a = analysis.Analysis(**parameters)
-    a.eta = [1, 0.1, 0.001]
-    a.eta = np.logspace(-5, -2, 4)
-    a.lambd = np.logspace(-5, -2, 4)
-
-    a.plot_heatmap()
+    # Example: heatmap with eta and lambda
+    # a = analysis.Analysis(**parameters)
+    # a.eta = np.logspace(-5, -2, 4)
+    # a.lambd = np.logspace(-5, -2, 4)
+    # a.plot_heatmap()
     
+
+    # Example: heatmap with width and depth
+    # a = analysis.Analysis(**parameters)
+    # a.width = [5, 10, 15, 20]
+    # a.depth = [0, 1, 2, 3]
+    # a.plot_heatmap()
 
 
 
