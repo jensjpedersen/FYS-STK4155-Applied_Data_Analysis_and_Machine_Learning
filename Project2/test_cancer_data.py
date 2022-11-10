@@ -51,8 +51,8 @@ if __name__ == '__main__':
 
 
     # eta = 0.00001
-    eta = 0.001
-    depth = 3 
+    eta = 0.01
+    depth = 2 
     width = 10
 
     n_output_nodes = 1
@@ -65,10 +65,10 @@ if __name__ == '__main__':
 
     gamma = 0.8
     lambd = 0
-    # op = optimizer.Optimizer(eta, gamma)
-    op = optimizer.Optimizer(eta, gamma, lambd=lambd)
 
-    # op = optimizer.Optimizer(eta, 'gd')
+    op = optimizer.Optimizer(eta, gamma, lambd=lambd)
+    # op = optimizer.Optimizer(eta, gamma, lambd=lambd, tuning_method='rms_prop', beta=0.9)
+    # op = optimizer.Optimizer(eta, gamma, lambd=lambd, tuning_method='adam', beta1=0.9, beta2=0.999)
 
     tn = neural_network.TrainNetwork(nn, op, n_minibatches = 10)
 
@@ -76,6 +76,7 @@ if __name__ == '__main__':
     tn.train(200, True, X_test, y_test)
     # tn.train(200, True, )
     toc = time.perf_counter()
+    print(f'took: {toc-tic}')
     y = tn.get_output(X_train)
     acc_train = tn.get_accuracy(X_train, y_train)
     acc_test = tn.get_accuracy(X_test, y_test)
@@ -87,16 +88,17 @@ if __name__ == '__main__':
     train_score = tn.get_all_train_scores()
     x = np.arange(1, len(test_score)+1)
 
-    plt.scatter(x, test_score, label = 'test')
-    plt.scatter(x, train_score, label = 'train')
+    plt.figure()
+    plt.plot(x, test_score, label = 'test')
+    plt.plot(x, train_score, label = 'train')
     plt.legend()
-    plt.show()
 
     test_acc = tn.get_all_test_accuracyies()
     train_acc = tn.get_all_train_accuracyies()
 
-    plt.scatter(x, test_acc, label = 'test')
-    plt.scatter(x, train_acc, label = 'train')
+    plt.figure()
+    plt.plot(x, test_acc, label = 'test')
+    plt.plot(x, train_acc, label = 'train')
     plt.legend()
     plt.show()
 
