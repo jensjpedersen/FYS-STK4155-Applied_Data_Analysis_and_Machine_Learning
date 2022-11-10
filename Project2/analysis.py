@@ -67,6 +67,18 @@ class Analysis:
 
         return tn
 
+    def __get_scores(self, tn: neural_network.TrainNetwork, score):
+        if score == 'accuracy':
+            train_scores = tn.get_all_train_accuracyies()
+            test_scores = tn.get_all_test_accuracyies()
+
+        elif score == 'cost': 
+            train_scores = tn.get_all_train_scores()
+            test_scores = tn.get_all_test_scores()
+
+        return train_scores, test_scores
+
+
     def plot_score(self, score: str): 
         """ Plot score as function of epochs """
         score_options = ['accuracy', 'cost']
@@ -74,58 +86,48 @@ class Analysis:
             raise ValueError(f'Spesify score, valid values are: {score_options}')
 
         self_copy = copy.deepcopy(self) 
-        values = self.find_list_variables()
+        values = self.__find_list_variables()
 
-        # if values is empty 
-        if len(values) == 0: 
-            # if not empty loop
+        if len(values) > 1: 
+            raise ValueError(f'Multiple variable lists is not supported. Got {len(values)}; {values}')
 
-
-            tn = self.setup_network(self_copy, save_scores=True)
-
-            if score == 'accuracy':
-                train_scores = tn.get_all_train_accuracyies()
-                test_scores = tn.get_all_test_accuracyies()
-
-            elif score == 'cost': 
-                train_scores = tn.get_all_train_scores()
-                test_scores = tn.get_all_test_scores()
-
-            self.__plot(train_scores, test_scores, legend = '', ylabel = score)
-            return
-
-        for variable_name, variable_values in values: 
-            for val in variable_values: 
-                setattr(self_copy, variable_name, val)
-                tn = self.setup_network(self_copy)
-
-
-
-
-
-
-
-
-
-    def __plot(self, train_scores, test_scores, legend, ylabel): 
-        epochs = np.arange(1, len(train_scores)+1)
 
         fig, ax = plt.subplots()
-
         sns.set_style("darkgrid")
-        # plt.xlabel(f'Epochs')
         plt.xlabel('Epochs')
-        plt.ylabel(f'{ylabel}')
-        # sns.lineplot(x=epochs, y=test_scores, marker='o', linewidth=1, label='test')
-        # sns.lineplot(x=epochs, y=train_scores, marker='o', linewidth=1, label='train')
-        sns.lineplot(x=epochs, y=test_scores, linewidth=1, label=f'test data {legend}')
-        sns.lineplot(x=epochs, y=train_scores, linewidth=1, label=f'train data {legend}')
+        plt.ylabel(f'{score}')
+
+        if score == 'cost': 
+            plt.ylabel(f'{self.cost_score}')
+
+        if len(values) == 0: 
+            # if values is empty 
+            tn = self.setup_network(self_copy, save_scores=True)
+            train_scores, test_scores = self.__get_scores(tn, score)
+
+            epochs = np.arange(1, len(train_scores)+1)
+            sns.lineplot(x=epochs, y=test_scores, linewidth=1, label=f'test data')
+            sns.lineplot(x=epochs, y=train_scores, linewidth=1, label=f'train data')
+            self.toggle_legend(ax)
+            plt.show()
+            return
+
+        variable_name = values[0][0]
+        variable_values = values[0][1]
+        for val in variable_values: 
+            setattr(self_copy, variable_name, val)
+            tn = self.setup_network(self_copy, save_scores = True)
+            train_scores, test_scores = self.__get_scores(tn, score)
+
+            epochs = np.arange(1, len(train_scores)+1)
+            sns.lineplot(x=epochs, y=test_scores, linewidth=1, label=f'Test data, {variable_name}: {val}')
+            sns.lineplot(x=epochs, y=train_scores, linewidth=1, label=f'Train data, {variable_name}: {val}')
+
         self.toggle_legend(ax)
         plt.show()
-        
 
 
-    def find_list_variables(self) -> list: 
+    def __find_list_variables(self) -> list: 
         """ 
         Returns:
             values: list of tuple[str, list]. First and second vlaue in tuple
@@ -149,7 +151,7 @@ class Analysis:
 
         self_copy = copy.deepcopy(self) # Don't want to do changes to origianl object
 
-        values = self.find_list_variables()
+        values = self.__find_list_variables()
 
         if len(values) != 2: 
             raise ValueError('Need two arrays/lists exactly')

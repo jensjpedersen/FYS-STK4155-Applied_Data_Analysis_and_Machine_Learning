@@ -46,7 +46,7 @@ if __name__ == '__main__':
         "X_test": X_test,
         "y_test": y_test,
         "eta": 0.001, 
-        "depth": 3 ,
+        "depth": 1 ,
         "width": 10,
         "n_output_nodes": 1,
         "cost_score": 'cross_entropy',
@@ -54,8 +54,9 @@ if __name__ == '__main__':
         "activation_output": 'sigmoid',
         "gamma": 0.8,
         "lambd": 0,
-        "n_minibatches": 1,
-        "epochs": 500
+        "tuning_method": 'none',
+        "n_minibatches": 10,
+        "epochs": 100
         }
 
     # Example: heatmap with eta and lambda
@@ -69,6 +70,12 @@ if __name__ == '__main__':
     # a = analysis.Analysis(**parameters)
     # a.width = [5, 10, 15, 20]
     # a.depth = [0, 1, 2, 3]
+    # a.plot_heatmap()
+
+    # Plot cost score for differnet tuning 
+    # a = analysis.Analysis(**parameters)
+    # a.tuning_method = ['none', 'rms_prop', 'adam']
+    # a.plot_score('cost')
     # a.plot_heatmap()
 
 
