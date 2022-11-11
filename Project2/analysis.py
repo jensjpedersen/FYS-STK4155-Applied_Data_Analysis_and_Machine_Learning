@@ -78,6 +78,17 @@ class Analysis:
 
         return train_scores, test_scores
 
+    def __get_last_score(self, tn: neural_network.TrainNetwork, score):
+        if score == 'accuracy':
+            train_scores = tn.get_accuracy(self.X_train, self.y_train)
+            test_scores = tn.get_accuracy(self.X_test, self.y_test)
+
+        elif score == 'cost': 
+            train_scores = tn.get_score(self.X_train, self.y_train)
+            test_scores = tn.get_score(self.X_test, self.y_test)
+
+        return train_scores, test_scores
+
 
     def plot_score(self, score: str): 
         """ Plot score as function of epochs """
@@ -178,31 +189,36 @@ class Analysis:
                 tn = self.setup_network(self_copy)
 
                 # Add scores to matrix
-                train_scores[j, i] = tn.get_accuracy(self.X_train, self.y_train)
-                test_scores[j, i] = tn.get_accuracy(self.X_test, self.y_test)
+                train_scores[j, i], test_scores[j, i] = self.__get_last_score(tn, score)
 
+
+        # Get score label
+        label = 'accuracy'
+        if score == 'cost': 
+            label = tn.nn.cost_score
+        label = self.__fix_label(label)
 
         # Plot heatmaps
         plt.figure(figsize=(12,8))
-        plt.title('Score on Training Data')
+        plt.title('Training Data')
         sns.heatmap(train_scores, annot=True, fmt='.2f',
                 # vmax = vmax, 
-                cbar_kws={'label': 'Accuracy'}, 
+                cbar_kws={'label': label}, 
                 xticklabels = [str(x_val) for x_val in values[0][1]],
                 yticklabels=[str(y_val) for y_val in values[1][1]]) 
-        plt.xlabel(x_label)
-        plt.ylabel(y_label)
+        plt.xlabel(self.__fix_label(x_label))
+        plt.ylabel(self.__fix_label(y_label))
 
         plt.figure(figsize=(12,8))
-        plt.title('Score on Test Data')
+        plt.title('Test Data')
         sns.heatmap(test_scores, annot=True, fmt='.2f',
                 # vmax = vmax, 
-                cbar_kws={'label': 'Accuracy'}, 
+                cbar_kws={'label': label}, 
                 xticklabels = [str(x_val) for x_val in values[0][1]],
                 yticklabels=[str(y_val) for y_val in values[1][1]]) 
 
-        plt.xlabel(x_label)
-        plt.ylabel(y_label)
+        plt.xlabel(self.__fix_label(x_label))
+        plt.ylabel(self.__fix_label(y_label))
 
         plt.show()
 
