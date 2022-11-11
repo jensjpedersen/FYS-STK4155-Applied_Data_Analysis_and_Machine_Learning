@@ -103,7 +103,7 @@ class Analysis:
             raise ValueError(f'Multiple variable lists is not supported. Got {len(values)}; {values}')
 
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(12,8))
         sns.set_style("darkgrid")
         plt.xlabel('Epochs')
         ylabel = score
@@ -133,9 +133,10 @@ class Analysis:
             train_scores, test_scores = self.__get_scores(tn, score)
 
             epochs = np.arange(1, len(train_scores)+1)
-            sns.lineplot(x=epochs, y=test_scores, linewidth=1, label=f'Test data, {variable_name}: {val}')
-            sns.lineplot(x=epochs, y=train_scores, linewidth=1, label=f'Train data, {variable_name}: {val}')
+            sns.lineplot(x=epochs, y=test_scores, linewidth=1, label=f'Test data  |  {val}')
+            sns.lineplot(x=epochs, y=train_scores, linewidth=1, label=f'Train data  |  {val}')
 
+        plt.title(f'Scores with different {self.__fix_label(variable_name)}')
         self.__toggle_legend(ax)
         plt.show()
 
