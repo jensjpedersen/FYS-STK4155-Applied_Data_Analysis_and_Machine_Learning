@@ -25,7 +25,7 @@ if __name__ == '__main__':
     reload(optimizer)
     reload(analysis)
 
-    np.random.seed(2)
+    np.random.seed(5)
     # Load the data
     cancer = load_breast_cancer()
     targets = cancer.target[:,np.newaxis]
