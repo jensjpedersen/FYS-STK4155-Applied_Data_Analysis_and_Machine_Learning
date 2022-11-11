@@ -6,6 +6,7 @@ import pandas as pd
 import seaborn as sns
 from importlib import reload
 import time
+import tensorflow as tf
 
 from sklearn.model_selection import  train_test_split 
 from sklearn.datasets import load_breast_cancer
@@ -70,8 +71,21 @@ if __name__ == '__main__':
     # op = optimizer.Optimizer(eta, gamma, lambd=lambd, tuning_method='rms_prop', beta=0.9)
     # op = optimizer.Optimizer(eta, gamma, lambd=lambd, tuning_method='adam', beta1=0.9, beta2=0.999)
 
-    tn = neural_network.TrainNetwork(nn, op, n_minibatches = 10)
 
+    # # Kersa 
+    # model = tf.keras.models.Sequential()
+    # model.add(tf.keras.layers.Dense(10, activation=tf.nn.sigmoid))
+    # model.add(tf.keras.layers.Dense(10, activation=tf.nn.sigmoid))
+    # model.add(tf.keras.layers.Dense(1, activation=tf.nn.sigmoid))
+    # opt= tf.keras.optimizers.SGD(learning_rate=eta, momentum=gamma)
+    # model.compile(optimizer=opt, loss='BinaryCrossentropy', metrics=['accuracy'])
+    # model.fit(X_train, y_train, epochs=200, batch_size=len(y_train))
+    # val_loss, val_acc = model.evaluate(X_test, y_test)
+    # print(val_acc)
+
+
+
+    tn = neural_network.TrainNetwork(nn, op, n_minibatches = 10)
     tic = time.perf_counter()
     tn.train(200, True, X_test, y_test)
     # tn.train(200, True, )
