@@ -9,6 +9,7 @@ import neural_network
 import copy
 import optimizer 
 import seaborn as sns
+import time
 
 
 @dataclass
@@ -60,10 +61,13 @@ class Analysis:
 
         tn = neural_network.TrainNetwork(nn, op, n_minibatches = self_copy.n_minibatches)
 
+        tic = time.perf_counter()
         if save_scores == True:
             tn.train(epochs=self_copy.epochs, save_scores = save_scores, X_test = self.X_test, y_test = self.y_test)
         else: 
             tn.train(epochs=self_copy.epochs)
+        toc = time.perf_counter()
+        print(f'                         Training took: {toc-tic}s')
 
         return tn
 
