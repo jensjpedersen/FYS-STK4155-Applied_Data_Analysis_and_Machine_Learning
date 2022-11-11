@@ -25,6 +25,7 @@ if __name__ == '__main__':
     reload(optimizer)
     reload(analysis)
 
+    np.random.seed(2)
     # Load the data
     cancer = load_breast_cancer()
     targets = cancer.target[:,np.newaxis]
@@ -38,7 +39,6 @@ if __name__ == '__main__':
     X_train = scaler.transform(X_train)
     X_test = scaler.transform(X_test)
 
-    # np.random.seed(0)
 
     parameters = {
         "X_train": X_train,
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         "cost_score": 'cross_entropy',
         "activation_hidden": 'sigmoid',
         "activation_output": 'sigmoid',
-        "gamma": 0.8,
+        "gamma": 0.9,
         "lambd": 0,
         "tuning_method": 'none',
         "n_minibatches": 10,
@@ -76,8 +76,28 @@ if __name__ == '__main__':
     # a = analysis.Analysis(**parameters)
     # a.tuning_method = ['none', 'rms_prop', 'adam']
     # a.plot_score('cost')
-    # a.plot_heatmap()
 
+    # a = analysis.Analysis(**parameters)
+    # a.activation_hidden = ['sigmoid', 'relu', 'leaky_relu']
+    # # a.activation_hidden = 'relu'
+    # # a.eta = np.logspace(-5, -1, 5)
+    # # a.plot_heatmap()
+    # # a.plot_score('cost')
+    # a.epochs = 50
+    # a.plot_score('accuracy')
+
+
+
+#  ____            _         _ 
+# |  _ \ __ _ _ __| |_    __| |
+# | |_) / _` | '__| __|  / _` |
+# |  __/ (_| | |  | |_  | (_| |
+# |_|   \__,_|_|   \__|  \__,_|
+                             
+    # find optimal number of n_minibatches
+    a = analysis.Analysis(**parameters)
+    a.n_minibatches = [1, 5, 10, 15, 20]
+    a.plot_score('accuracy')
 
 
     
