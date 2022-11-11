@@ -28,35 +28,16 @@ class Activation:
         return sigm * (1 - sigm)
 
     def __relu(self, x):
-        zero = np.zeros_like(x)
-        relu = np.maximum(x, zero)
-        return relu
+        return x * (x > 0)
         
     def __derivative_relu(self, x): 
-        relu = np.zeros_like(x)
-        i1 = np.where(x > 0)[0]
-        i2 = np.where(x <= 0)[0] # XXX: actually discontinous in zero
-        relu[i1] = 1
-        relu[i2] = 0
-        return relu
+        return np.where(x > 0, 1, 0)
 
     def __leaky_relu(self, x): 
-        # assert(len(x.shape) == 1)
-        relu = np.zeros_like(x)
-        i1 = np.where(x > 0)[0]
-        i2 = np.where(x <= 0)[0]
-        # assert(len(i1) + len(i2) == len(x))
-        relu[i1] = x[i1]
-        relu[i2] = 0.01*x[i2]
-        return relu
+        return np.where(x > 0, x, 0.01*x)
 
     def __derivative_leaky_relu(self, x): 
-        relu = np.zeros_like(x)
-        i1 = np.where(x > 0)[0]
-        i2 = np.where(x <= 0)[0]
-        relu[i1] = 1
-        relu[i2] = 0.01
-        return relu
+        return np.where(x > 0, 1, 0.01)
 
     def get_values(self):
         """ 
