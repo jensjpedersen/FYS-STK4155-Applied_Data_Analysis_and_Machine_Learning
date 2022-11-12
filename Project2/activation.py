@@ -17,7 +17,7 @@ class Activation:
     options: list = field(default_factory=lambda: ['sigmoid', 'none', 'relu', 'leaky_relu'])
 
     def __post_init(self):
-        assert(func_name in self.options)
+        assert(self.func_name in self.options)
 
     def __sigmoid(self, x):
         return 1/(1 + np.exp(-x))
