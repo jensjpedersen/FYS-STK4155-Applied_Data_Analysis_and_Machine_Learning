@@ -528,11 +528,11 @@ class TrainNetwork:
         try:
             return self.test_accuracies
         except AttributeError as e: 
+            # attibute error if mse is used
             raise AttributeError('Run method train with parameter save_scores=True first.' \
                                  'Variable is only created if nn.cost_score="cross_entropy"') from e
 
     def get_all_train_accuracyies(self): 
-        pass
         try:
             return self.train_accuracies
         except AttributeError as e: 

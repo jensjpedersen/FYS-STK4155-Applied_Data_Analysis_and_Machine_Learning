@@ -12,7 +12,7 @@ class Optimizer:
     eta: float
     # gradient_method: str
     gamma: float = None
-    minibatch_size: int = None
+    # minibatch_size: int = None
     lambd: float = 0 
     beta: float = 0.9 # beta for rms_prop, typiclly 0.9
     beta1: float = 0.9 # beta first Momentum, typiclly 0.9
