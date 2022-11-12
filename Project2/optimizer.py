@@ -18,7 +18,7 @@ class Optimizer:
     beta1: float = 0.9 # beta first Momentum, typiclly 0.9
     beta2: float = 0.999 # beta secomd momentum, typiccly 0.99
     tuning_method: str = 'none'
-    tuning_method_options: tuple = field(init=False, default = ('none', 'rms_prop', 'adam'))
+    tuning_method_options: tuple = field(init=False, default = ('none', 'rms_prop', 'adam', 'adagrad'))
 
 
     # gradient_method_options: list = field(init=False, default_factory=lambda: ['gd', 'sgd'])
@@ -35,10 +35,11 @@ class Optimizer:
     b_second_momentum: np.ndarray = field(init=False, default=None) # Previous change in bias
 
     # Adagrad Parameters
-    G_iter: np.ndarray = field(init=False, default=None) #
+    W_Giter: np.ndarray = field(init=False, default=None) #
+    b_Giter: np.ndarray = field(init=False, default=None) #
 
 
-    epsilon: float = field(init=False, default=None) # Previous change in bias
+    epsilon: float = field(init=False, default=1e-8) 
 
 
     number_of_updates: int = field(init=False, default=0)
@@ -59,13 +60,11 @@ class Optimizer:
 
         elif self.tuning_method == 'rms_prop': 
             self.__test_beta_rms()
-            self.epsilon = 1e-8
             self.W_second_momentum = 0.0
             self.b_second_momentum = 0.0
 
         elif self.tuning_method == 'adam':
             self.__test_beta_adam()
-            self.epsilon = 1e-8
             self.W_first_momentum = 0.0
             self.b_first_momentum = 0.0
             self.W_second_momentum = 0.0
@@ -126,7 +125,20 @@ class Optimizer:
             W_change = self.eta * W_first_momentum/(np.sqrt(W_second_momentum) + self.epsilon)
             b_change = self.eta * b_first_momentum/(np.sqrt(b_second_momentum) + self.epsilon)
 
+        elif self.tuning_method == 'adagrad':
 
+            if self.number_of_updates == 1: 
+                self.W_Giter = np.zeros_like(gradient_weights)
+                self.b_Giter = np.zeros_like(gradient_bias)
+
+            self.W_Giter += gradient_weights**2
+            self.b_Giter += gradient_bias**2
+
+            W_grad_inverse = self.eta/np.sqrt(self.W_Giter + self.epsilon)
+            b_grad_inverse = self.eta/np.sqrt(self.b_Giter + self.epsilon)
+
+            W_change = np.multiply(W_grad_inverse, gradient_weights)
+            b_change = np.multiply(b_grad_inverse, gradient_bias)
 
         if self.gamma != None: 
             # Momentum
