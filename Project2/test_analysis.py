@@ -11,7 +11,7 @@ from sklearn.model_selection import  train_test_split
 from sklearn.datasets import load_breast_cancer
 from sklearn.linear_model import LogisticRegression
 import sklearn as skl 
-
+import tensorflow as tf
 import neural_network
 import scores
 import activation
@@ -74,8 +74,8 @@ if __name__ == '__main__':
     # # Find optimal values fro lmabda and eta
     # a = analysis.Analysis(**parameters) # XXX: in progress
     # a.epochs = 200  # XXX: Reduced number of ephcos to speedup
-    # a.lambd = np.logspace(-5, 0, 6)
-    # a.lambd[-1] = 0
+    # a.lambd = np.logspace(-5, -1, 5)
+    # a.lambd[0] = 0
     # a.eta = np.logspace(-5, -1, 5)
     # a.plot_heatmap('accuracy')
 
@@ -121,7 +121,7 @@ if __name__ == '__main__':
         "y_train": y_train,
         "X_test": X_test,
         "y_test": y_test,
-        "eta": 0.1,  
+        "eta": 0.001,   # XXX: defualt leraning rate for adagrad and adam
         "depth": 2 ,  # XXX: changed 
         "width": 5,  # XXX: changed
         "n_output_nodes": 1,
@@ -143,20 +143,87 @@ if __name__ == '__main__':
     # a.plot_score('accuracy')
 
 
-    # Test different learning rate tuning 
-    a = analysis.Analysis(**parameters)
-    a.lambd = 0
-    a.eta = 0.001 # Low eta to compare convergence rate
-    a.tuning_method = ['none', 'adam', 'rms_prop', 'adagrad']
-    a.plot_score('accuracy')
 
-    
 
+    # # # Test different tuning 
+    # a = analysis.Analysis(**parameters)
+    # # a.tuning_method = 'none'
+    # a.gamma = 0.9
+    # a.eta =0.001
+    # a.lambd = 0
+    # a.tuning_method = ['none', 'adam', 'rms_prop', 'adagrad']
+    # a.plot_score('accuracy')
+
+    # # # Test different tuning 
+    # a = analysis.Analysis(**parameters)
+    # # a.tuning_method = 'none'
+    # a.gamma = 0
+    # a.lambd = 0
+    # a.eta = 0.001
+    # a.tuning_method = ['none', 'adagrad', 'adam', 'rms_prop']
+    # a.plot_score('accuracy')
+
+
+
+    # Momentum vs tuning with best parms 
+    # a = analysis.Analysis(**parameters)
+    # a.tuning_method = 'none'
+    # a.gamma = [0, 0.5, 0.9]
+    # a.tuning_method = ['none', 'adam', 'rms_prop', 'adagrad']
+    # a.plot_heatmap('accuracy')
+
+    # # Test activation hidden layer 
+    # a = analysis.Analysis(**parameters)
+    # a.lambd = 0
+    # a.gamma = 0
     # a.activation_hidden = ['sigmoid', 'relu', 'leaky_relu']
+    # a.plot_score('accuracy')
 
 
+    # Hatmap lambd vs activation hidden
+    # a = analysis.Analysis(**parameters)
+    # a.activation_hidden = ['sigmoid', 'relu', 'leaky_relu']
+    # a.lambd = [0, 1e-3, 0.1]
+    # a.plot_heatmap('accuracy')
 
-    
 
-    
+    # Best vaues
+
+
+    parameters = {
+        "X_train": X_train,
+        "y_train": y_train,
+        "X_test": X_test,
+        "y_test": y_test,
+        "eta": 0.001,   # XXX: defualt leraning rate for adagrad and adam
+        "depth": 2 ,  # XXX: changed 
+        "width": 5,  # XXX: changed
+        "n_output_nodes": 1,
+        "cost_score": 'cross_entropy',
+        "activation_hidden": 'sigmoid',
+        "activation_output": 'sigmoid',
+        "gamma": 0.9,
+        "lambd": 0.01, 
+        "tuning_method": 'adagrad',
+        "n_minibatches": 20,
+        "epochs": 300 
+        }
+
+    # a = analysis.Analysis(**parameters)
+    # a.plot_score('accuracy') # acc: 0.9825, stable after 165 epochs  , eta = 0.001, gamma = 0.9, labmd = 0.01, adagrad 
+    #                          # Worse performance with relu and leaky_relu
+
+    # # Keras 
+    # model = tf.keras.models.Sequential()
+    # model.add(tf.keras.layers.Dense(5, activation=tf.nn.sigmoid))
+    # model.add(tf.keras.layers.Dense(5, activation=tf.nn.sigmoid))
+    # model.add(tf.keras.layers.Dense(1, activation=tf.nn.sigmoid))
+    # opt= tf.keras.optimizers.Adagrad(learning_rate=1)
+    # # opt= tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.9)
+    # model.compile(optimizer=opt, loss='BinaryCrossentropy', metrics=['accuracy'])
+    # model.fit(X_train, y_train, epochs=300, batch_size=len(y_train))
+    # val_loss, val_acc = model.evaluate(X_test, y_test)
+    # print(val_acc)
+
+
 
