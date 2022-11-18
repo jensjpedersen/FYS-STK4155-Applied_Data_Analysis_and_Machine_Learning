@@ -52,19 +52,19 @@ if __name__ == '__main__':
 
 
     # eta = 0.00001
-    eta = 0.01
-    depth = 2 
+    eta = 0.001
+    depth = 1 
     width = 10
 
     n_output_nodes = 1
     cost_score = 'mse'
     cost_score = 'cross_entropy'
-    activation_hidden = 'sigmoid'
+    activation_hidden = 'relu'
     activation_output = 'sigmoid'
 
     nn = neural_network.NeuralNetwork(X_train, y_train, depth, width, n_output_nodes, cost_score, activation_hidden, activation_output)
 
-    gamma = 0.8
+    gamma = 0.0
     lambd = 0
 
     op = optimizer.Optimizer(eta, gamma, lambd=lambd)
@@ -85,9 +85,9 @@ if __name__ == '__main__':
 
 
 
-    tn = neural_network.TrainNetwork(nn, op, n_minibatches = 10)
+    tn = neural_network.TrainNetwork(nn, op, n_minibatches = 20)
     tic = time.perf_counter()
-    tn.train(200, True, X_test, y_test)
+    tn.train(100, True, X_test, y_test)
     # tn.train(200, True, )
     toc = time.perf_counter()
     print(f'took: {toc-tic}')
@@ -102,13 +102,14 @@ if __name__ == '__main__':
     train_score = tn.get_all_train_scores()
     x = np.arange(1, len(test_score)+1)
 
-    plt.figure()
-    plt.plot(x, test_score, label = 'test')
-    plt.plot(x, train_score, label = 'train')
-    plt.legend()
+    # plt.figure()
+    # plt.plot(x, test_score, label = 'test')
+    # plt.plot(x, train_score, label = 'train')
+    # plt.legend()
 
     test_acc = tn.get_all_test_accuracyies()
     train_acc = tn.get_all_train_accuracyies()
+    print(tn.get_accuracy(X_test, y_test))
 
     plt.figure()
     plt.plot(x, test_acc, label = 'test')

@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     nn = neural_network.NeuralNetwork(X_train, y_train, depth, width, n_output_nodes, cost_score, activation_hidden, activation_output)
 
-    gamma = 0.8
+    gamma = 0.9
     lambd = 0
     # op = optimizer.Optimizer(eta, gamma)
     op = optimizer.Optimizer(eta, gamma, lambd=lambd)

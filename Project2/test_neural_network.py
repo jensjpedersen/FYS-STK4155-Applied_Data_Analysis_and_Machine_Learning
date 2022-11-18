@@ -82,9 +82,9 @@ if __name__ == '__main__':
     X_data, y_data = p.get_train()
     nn = neural_network.NeuralNetwork( X_data, y_data, depth, width, n_output_nodes, cost_score, activation_hidden, activation_output)
 
-    eta = 0.0001
-    gamma = 0
-    n_epochs = 1000
+    eta = 0.01
+    gamma = 0.9
+    n_epochs = 5000
     n_minibatches = 1
 
     op = optimizer.Optimizer(eta, gamma)

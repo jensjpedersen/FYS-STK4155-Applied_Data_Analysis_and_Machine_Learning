@@ -51,7 +51,7 @@ if __name__ == '__main__':
     n_minibatches = 10 
 
     tuning_method = 'none'
-    # tuning_method = 'rms_prop'
+    tuning_method = 'rms_prop'
     tuning_method = 'adam'
     # beta = 0.9
     # beta1 = 0.9

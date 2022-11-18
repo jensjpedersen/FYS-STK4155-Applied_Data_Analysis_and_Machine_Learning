@@ -13,7 +13,7 @@ class PolyData:
     n_data: int
 
     x_range: tuple = (-1,1)
-    coeff: tuple = (1, 0, 1)
+    coeff: tuple = (0, 1, 5)
 
     test_size: float = 0.2
 
